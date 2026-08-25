@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>在途 CRM · 手机端原型评审</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="review-app">
+    <aside class="screen-rail" aria-label="原型页面目录">
+      <header class="rail-header">
+        <div class="brand-mark" aria-hidden="true">ZT</div>
+        <div>
+          <strong>在途 CRM</strong>
+          <span>手机端 · PRD v2.1</span>
+        </div>
+      </header>
+      <div class="rail-scope">
+        <span class="scope-dot" aria-hidden="true"></span>
+        一期事实底座与 AI 录入
+      </div>
+      <nav id="screenNav" class="screen-nav"></nav>
+      <footer class="rail-footer">
+        <span id="reviewProgress">0 / 14 已评审</span>
+        <button class="quiet-button" id="exportAll" type="button">导出全部意见</button>
+      </footer>
+    </aside>
+
+    <main class="prototype-stage">
+      <header class="stage-toolbar">
+        <div>
+          <span class="stage-kicker">交互原型</span>
+          <strong id="stageTitle">工作台</strong>
+        </div>
+        <div class="toolbar-actions">
+          <label class="device-select">
+            <span>视口</span>
+            <select id="deviceSize" aria-label="选择手机视口">
+              <option value="390x844">390 × 844</option>
+              <option value="375x667">375 × 667</option>
+              <option value="430x932">430 × 932</option>
+            </select>
+          </label>
+          <button class="icon-button" id="resetPrototype" type="button" title="重置原型状态" aria-label="重置原型状态">↺</button>
+        </div>
+      </header>
+
+      <section class="phone-zone" aria-label="手机原型画布">
+        <div class="phone-shell" id="phoneShell" data-size="390x844">
+          <div id="phoneScreen" class="phone-screen"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="review-panel" aria-label="当前页面 PRD 评审内容">
+      <header class="review-header">
+        <div>
+          <span class="stage-kicker">PRD 评审</span>
+          <h1 id="reviewTitle">工作台</h1>
+        </div>
+        <label class="review-check">
+          <input id="reviewDone" type="checkbox">
+          <span>已评审</span>
+        </label>
+      </header>
+
+      <div id="reviewContent" class="review-content"></div>
+
+      <section class="feedback-area" aria-labelledby="feedbackTitle">
+        <div class="feedback-heading">
+          <div>
+            <h2 id="feedbackTitle">本页修改意见</h2>
+            <span id="saveState" role="status">尚未填写</span>
+          </div>
+          <span id="commentCount">0 字</span>
+        </div>
+        <textarea id="reviewNotes" rows="7" maxlength="3000" placeholder="记录本界面需要调整的内容、原因和优先级…"></textarea>
+        <div class="feedback-actions">
+          <button class="secondary-button" id="copyCurrent" type="button">复制本页</button>
+          <button class="primary-button" id="saveCurrent" type="button">保存意见</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <noscript>此原型需要启用 JavaScript 才能切换页面并保存评审意见。</noscript>
+  <script src="app.js"></script>
+</body>
+</html>
