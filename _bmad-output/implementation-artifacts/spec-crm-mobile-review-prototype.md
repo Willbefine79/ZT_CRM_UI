@@ -53,7 +53,7 @@ context:
 - [x] `crm-review-prototype/README.md` -- 记录页面清单、关键路径和已覆盖 PRD 条目。
 
 **Acceptance Criteria:**
-- Given 首次打开, when 未操作, then 显示工作台且统计摘要默认折叠。
+- Given 首次打开, when 未操作, then 工作台直接显示待处理列表且不重复展示状态摘要。
 - Given 切换任一界面, when 查看右栏, then 条款、验收项和独立意见同步；刷新后意见仍存在并可汇总导出。
 - Given 完成客户查重与新增, when 保存, then 进入客户详情并可继续手工新增沟通。
 - Given AI 客户不唯一或字段未确认, when 尝试确认, then 不创建正式记录；明确确认后才进入正式详情。
@@ -90,22 +90,22 @@ context:
 
 **核心流程**
 
-- 工作台只呈现可展开的系统状态摘要与事实入口。
-  [`app.js:287`](../../crm-review-prototype/app.js#L287)
+- 工作台将系统状态直接融合到待处理列表，避免重复摘要入口。
+  [`app.js:286`](../../crm-review-prototype/app.js#L286)
 
 - 手工沟通独立于 AI，并在正式保存前验证必要事实。
-  [`app.js:404`](../../crm-review-prototype/app.js#L404)
+  [`app.js:394`](../../crm-review-prototype/app.js#L394)
 
 - AI 材料、客户匹配、人工确认和版本差异形成完整闭环。
-  [`app.js:453`](../../crm-review-prototype/app.js#L453)
+  [`app.js:443`](../../crm-review-prototype/app.js#L443)
 
 - 单一动作路由集中处理查重、确认、权限与治理边界。
-  [`app.js:679`](../../crm-review-prototype/app.js#L679)
+  [`app.js:669`](../../crm-review-prototype/app.js#L669)
 
 **评审持久化与表现**
 
 - 逐页意见显式保存并在存储不可用时反馈。
-  [`app.js:588`](../../crm-review-prototype/app.js#L588)
+  [`app.js:578`](../../crm-review-prototype/app.js#L578)
 
 - 响应式三栏与固定手机尺寸支持桌面评审和移动宽度检查。
   [`styles.css:60`](../../crm-review-prototype/styles.css#L60)

@@ -8,7 +8,7 @@ const screens = [
     id: "workbench", group: "总览", nav: "工作台", title: "事实工作台",
     refs: ["FR-13", "§7 信息架构", "UJ-1 / UJ-3"],
     objective: "聚合需要用户处理的系统状态，不包装成销售任务或经营驾驶舱。",
-    reviews: ["摘要默认折叠，展开后仅显示待确认草稿、待处理查重、处理失败。", "待处理项按系统状态与更新时间排序，每项回到事实流程。", "最近客户、最近正式沟通和三个全局新增入口可达。"],
+    reviews: ["待确认草稿、待处理查重和处理失败直接融合在待处理列表。", "待处理项按系统状态与更新时间排序，每项回到事实流程。", "最近客户、最近正式沟通和三个全局新增入口可达。"],
     decisions: ["不显示销售额、漏斗、评分、优先级或逾期。", "资料待补充只列缺失的客观字段，不显示百分比。"]
   },
   {
@@ -108,7 +108,6 @@ const screenById = Object.fromEntries(screens.map((screen) => [screen.id, screen
 
 const initialState = () => ({
   activeScreen: "workbench",
-  summaryOpen: false,
   filtersOpen: false,
   customerTab: "facts",
   dedupeStage: "idle",
@@ -285,19 +284,10 @@ function mobileFrame({ title, subtitle = "", body, back = "", action = "", nav =
 }
 
 function workbenchScreen() {
-  const summary = state.summaryOpen ? `<div class="summary-grid">
-    <div class="summary-cell"><strong>2</strong><span>待确认草稿</span></div>
-    <div class="summary-cell"><strong>1</strong><span>待处理查重</span></div>
-    <div class="summary-cell"><strong>1</strong><span>处理失败</span></div>
-  </div>` : "";
   return mobileFrame({
     title: "工作台", subtitle: "海天科技 · 张雨", nav: "workbench",
     action: `<button class="mobile-icon-button" type="button" data-action="open-global-add" title="新增" aria-label="打开新增菜单">+</button>`,
     body: `<div class="mobile-greeting"><strong>下午好，张雨</strong><span>按系统状态处理 CRM 事实</span></div>
-      <button class="summary-disclosure" type="button" data-action="toggle-summary" aria-expanded="${state.summaryOpen}">
-        <strong>今日状态摘要</strong><span>${state.summaryOpen ? "收起 −" : "展开查看 +"}</span>
-      </button>
-      ${summary}
       <div class="section-heading"><h3>待处理</h3><span>按更新时间</span></div>
       <div class="list-panel">
         <button class="system-item" type="button" data-screen="ai-review"><span class="item-dot"></span><span class="system-copy"><strong>电话记录待确认</strong><span>华东智造科技 · 10 分钟前</span></span><span class="item-action">审核 ›</span></button>
@@ -677,7 +667,6 @@ function captureMaterial() {
 }
 
 function handleAction(target, action) {
-  if (action === "toggle-summary") state.summaryOpen = !state.summaryOpen;
   if (action === "toggle-filters") state.filtersOpen = !state.filtersOpen;
   if (action === "set-customer-tab") state.customerTab = target.dataset.tab;
   if (action === "set-material-mode") {
