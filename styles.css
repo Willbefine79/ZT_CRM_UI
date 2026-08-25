@@ -307,28 +307,6 @@ summary:focus-visible {
 .mobile-greeting strong { display: block; font-size: 17px; }
 .mobile-greeting span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
 
-.summary-disclosure {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid rgba(255,255,255,.84);
-  border-radius: 14px;
-  color: var(--ink);
-  background: rgba(255,255,255,.64);
-  text-align: left;
-}
-
-.summary-disclosure strong { font-size: 12px; }
-.summary-disclosure span { color: var(--muted); font-size: 10px; }
-
-.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 8px 0 12px; }
-.summary-cell { min-height: 58px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.58); }
-.summary-cell strong { display: block; font-size: 17px; }
-.summary-cell span { color: var(--muted); font-size: 9px; }
-
 .system-item { width: 100%; padding: 12px 13px; display: grid; grid-template-columns: 9px minmax(0,1fr) auto; align-items: center; gap: 10px; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); background: transparent; text-align: left; }
 .system-item:last-child { border-bottom: 0; }
 .system-item:hover { background: rgba(255,255,255,.38); }

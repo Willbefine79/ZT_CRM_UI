@@ -23,7 +23,12 @@ test("prototype contains fourteen reviewable screens", () => {
 });
 
 test("core review safety contracts are represented", () => {
-  assert.match(app, /summaryOpen: false/);
+  const workbench = app.slice(app.indexOf("function workbenchScreen"), app.indexOf("function customersScreen"));
+  assert.doesNotMatch(app, /今日状态摘要|summaryOpen|toggle-summary/);
+  assert.match(app, /待确认草稿、待处理查重和处理失败直接融合在待处理列表/);
+  assert.match(workbench, /<h3>待处理<\/h3>/);
+  assert.match(workbench, /电话记录待确认[\s\S]*data-screen="dedupe"[\s\S]*会议纪要处理失败/);
+  assert.match(workbench, /data-screen="ai-review"[\s\S]*data-screen="ai-processing"/);
   assert.match(app, /AI 不会自动写入正式沟通记录/);
   assert.match(app, /确认正式记录/);
   assert.match(app, /版本冲突未解决，不能确认新版本/);
