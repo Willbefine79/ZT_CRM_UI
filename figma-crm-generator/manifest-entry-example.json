@@ -1,0 +1,8 @@
+{
+  "name": "ZT CRM Add Communication Entry",
+  "id": "zt-crm-add-communication-entry-local",
+  "api": "1.0.0",
+  "main": "code-entry-example.js",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page"
+}

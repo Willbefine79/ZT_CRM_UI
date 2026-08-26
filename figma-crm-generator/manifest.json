@@ -1,0 +1,8 @@
+{
+  "name": "ZT CRM Mobile Generator V5",
+  "id": "zt-crm-mobile-generator-local",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page"
+}
