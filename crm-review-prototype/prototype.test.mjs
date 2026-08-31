@@ -47,12 +47,12 @@ test("business wording and filters stay consistent", () => {
   const records = app.slice(app.indexOf("function recordsScreen"), app.indexOf("function recordDetailScreen"));
   const profile = app.slice(app.indexOf("function profileScreen"), app.indexOf("function renderPhone"));
   assert.doesNotMatch(app, /启用|停用|租户/);
-  assert.match(customers, /当前业务线[\s\S]*按该业务线的合作关系筛选/);
-  assert.match(customers, /filterRows\(customerRows, 5, state\.customerRelationFilter\)/);
+  assert.match(customers, /选择业务线[\s\S]*按所选业务线的合作关系筛选/);
+  assert.match(customers, /filterRows\(customerRows, 4, state\.customerBusinessLineFilter\)[\s\S]*filterRows\(lineRows, 5, state\.customerRelationFilter\)/);
   assert.match(records, /按沟通渠道筛选/);
   assert.match(records, /filterRows\(visibleRows, 2, state\.recordChannelFilter\)/);
   assert.match(profile, /所属企业/);
-  assert.match(app, /set-customer-filter[\s\S]*set-record-filter/);
+  assert.match(app, /set-customer-line-filter[\s\S]*set-customer-filter[\s\S]*set-record-filter/);
   assert.deepEqual(filterRows([["潜在"], ["已成交"]], 0, "潜在"), [["潜在"]]);
   assert.deepEqual(filterRows([["电话"], ["拜访"]], 0, "全部"), [["电话"], ["拜访"]]);
 });
@@ -75,10 +75,45 @@ test("customer creation keeps dedupe in the background", () => {
   assert.match(form, /data-action="check-customer-duplicate"/);
   assert.match(form, /暂未发现近似客户，保存时将再次校验[\s\S]*✓/);
   assert.match(actions, /action === "check-customer-duplicate"[\s\S]*navigate\("dedupe"\)[\s\S]*customerDedupeStatus = "clear"/);
-  assert.match(form, /createMode \? "" : `<details class="form-section"><summary>客观资料与工商信息/);
-  assert.match(form, /统一社会信用代码（选填）/);
+  assert.match(form, /业务线信息[\s\S]*id="customerBusinessLine"[\s\S]*id="customerRelation"/);
+  assert.match(form, /联系人[\s\S]*id="customerContactMobile"[\s\S]*id="customerContactWechat"[\s\S]*id="customerContactEmail"/);
+  assert.match(form, /企业规模与来源[\s\S]*工商信息[\s\S]*公开联系[\s\S]*主地址[\s\S]*客户跟进负责人[\s\S]*客户备注/);
+  assert.match(form, /销售管理员配置[\s\S]*客户拓展[\s\S]*id="customerFrontendSales"[\s\S]*方案与合同[\s\S]*id="customerBackendSales"[\s\S]*待分配/);
+  assert.doesNotMatch(form, /id="(?:customer)?RoleName"/);
+  assert.match(form, /统一社会信用代码/);
   assert.match(form, /仅用于精确识别同名企业/);
+  assert.match(app, /function captureCustomerForm[\s\S]*customerContactMobile[\s\S]*customerBusinessLine/);
   assert.doesNotMatch(readme, /新增客户 → 查重 → 客户表单/);
+});
+
+test("customer detail supports different follow-up owner join times", () => {
+  const detail = app.slice(app.indexOf("function customerDetailScreen"), app.indexOf("function manualRecordScreen"));
+  const actions = app.slice(app.indexOf("function handleAction"));
+  assert.match(detail, /业务线与客户跟进负责人[\s\S]*客户拓展 · 前端销售 · 建档时加入/);
+  assert.match(detail, /方案与合同 · 后端销售[\s\S]*data-action="assign-backend-sales"/);
+  assert.match(actions, /action === "assign-backend-sales"[\s\S]*customerBackendSales = "李程"/);
+});
+
+test("dedupe covers the enterprise dataset without exposing restricted customer data", () => {
+  const dedupe = app.slice(app.indexOf("function dedupeScreen"), app.indexOf("function customerFormScreen"));
+  const actions = app.slice(app.indexOf("function handleAction"));
+  assert.match(dedupe, /dedupeStage === "restricted"/);
+  assert.match(dedupe, /所属企业全量查重/);
+  assert.match(dedupe, /远航国际商旅\*\*\*\*[\s\S]*无权限/);
+  assert.match(dedupe, /客户详情、联系人、地址和负责人已隐藏/);
+  assert.match(dedupe, /data-action="request-restricted-access"/);
+  assert.match(actions, /远航国际商旅有限公司[\s\S]*dedupeStage = "restricted"/);
+  assert.match(actions, /action === "request-restricted-access"[\s\S]*dedupeAccessRequested = true/);
+});
+
+test("communication forms capture the complete relevant field set", () => {
+  const form = app.slice(app.indexOf("function manualRecordScreen"), app.indexOf("function recordsScreen"));
+  const actions = app.slice(app.indexOf("function captureManualForm"));
+  assert.match(form, /id="manualBusinessLine"[\s\S]*id="manualTime"[\s\S]*id="manualChannel"/);
+  assert.match(form, /id="manualDuration"[\s\S]*id="manualLocation"[\s\S]*id="manualConclusion"[\s\S]*id="manualRemark"/);
+  assert.match(actions, /manualBusinessLine[\s\S]*manualDuration[\s\S]*manualLocation[\s\S]*manualRemark/);
+  assert.match(actions, /errors\.businessLine = "请选择本次沟通所属业务线/);
+  assert.match(actions, /recordSnapshot = \{ customer: state\.customerName, time: state\.manualTime, channel: state\.manualChannel, businessLine: state\.manualBusinessLine, duration: state\.manualDuration, location: state\.manualLocation[\s\S]*remark: state\.manualRemark/);
 });
 
 test("supplementing a record is a manual omission-recovery flow", () => {
@@ -113,4 +148,16 @@ test("archived records leave and can return to the formal list", () => {
   assert.match(records, /state\.archivedRecord[\s\S]*filter/);
   assert.match(actions, /confirm-deactivate-record[\s\S]*state\.archivedRecord =/);
   assert.match(actions, /target\.dataset\.item === "current-record"[\s\S]*state\.archivedRecord = null[\s\S]*navigate\("records"\)/);
+});
+
+test("sales can review their own archive and restore before editing", () => {
+  const governance = app.slice(app.indexOf("function governanceScreen"), app.indexOf("function profileScreen"));
+  const profile = app.slice(app.indexOf("function profileScreen"), app.indexOf("function renderPhone"));
+  const actions = app.slice(app.indexOf("function handleAction"));
+  assert.match(profile, /data-action="open-my-archive"[\s\S]*我的归档/);
+  assert.match(governance, /本人归档 · 恢复后可编辑/);
+  assert.match(governance, /查看归档详情[\s\S]*只读/);
+  assert.match(governance, /data-action="restore-and-edit"[\s\S]*恢复并编辑客户[\s\S]*恢复并补充记录/);
+  assert.match(actions, /action === "open-my-archive"[\s\S]*governanceScope = "self"/);
+  assert.match(actions, /action === "restore-and-edit"[\s\S]*navigate\("customer-form"\)[\s\S]*navigate\("version-diff"\)/);
 });

@@ -331,6 +331,13 @@ summary:focus-visible {
 .filter-row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 .filter-scope { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 12px; }
 .filter-scope span, .filter-label { color: var(--muted); font-size: 11px; }
+.filter-label-spaced { display: block; margin-top: 14px; }
+.collaboration-role-row { padding: 12px 0; border-top: 1px solid rgba(105,128,145,.16); }
+.collaboration-role-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.collaboration-role-head > span:first-child { min-width: 0; display: grid; gap: 3px; }
+.collaboration-role-head strong { font-size: 13px; }
+.collaboration-role-head small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.collaboration-role-row .field { margin-top: 10px; }
 .workbench-disclosure { margin: 0 0 12px; }
 .workbench-disclosure summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; cursor: pointer; list-style: none; border-radius: 12px; color: var(--muted); background: rgba(255,255,255,.46); font-size: 12px; font-weight: 700; }
 .workbench-disclosure summary::-webkit-details-marker { display: none; }
