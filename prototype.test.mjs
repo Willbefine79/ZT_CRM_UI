@@ -56,12 +56,16 @@ test("business wording and filters stay consistent", () => {
   assert.doesNotMatch(app, /启用|停用|租户/);
   assert.match(app, /customerRelationFilter: ""[\s\S]*customerBusinessLineFilter: ""/);
   assert.match(app, /customerListTab: "saved"/);
+  assert.match(app, /customerSearchQuery: ""/);
   assert.match(customers, /const tabs = \[\["saved", "已保存"\], \["draft", "草稿"\], \["archived", "已归档"\]\]/);
   assert.match(customers, /customer-module-tabs/);
   assert.match(customers, /set-customer-list-tab[\s\S]*customerListTab[\s\S]*role="tabpanel"/);
-  assert.match(customers, /搜索客户、联系人或手机号[\s\S]*quick-filter-strip[\s\S]*已选筛选条件/);
-  assert.match(customers, /1 条客户草稿[\s\S]*open-customer-draft[\s\S]*远航国际商旅/);
-  assert.match(customers, /1 家已归档客户[\s\S]*open-customer-archive[\s\S]*北辰工业系统/);
+  assert.match(customers, /const sharedSearch = `[\s\S]*搜索客户、联系人或手机号[\s\S]*quick-filter-strip[\s\S]*已选筛选条件/);
+  assert.match(customers, /customer-module-tabs[\s\S]*\$\{sharedSearch\}[\s\S]*customer-module-content/);
+  assert.match(customers, /filteredDraftRows\.length[\s\S]*条客户草稿[\s\S]*open-customer-draft/);
+  assert.match(customers, /filteredArchivedRows\.length[\s\S]*家已归档客户[\s\S]*open-customer-archive/);
+  assert.match(customers, /远航国际商旅[\s\S]*北辰工业系统/);
+  assert.match(customers, /赵珊[\s\S]*138\*\*\*\*5169[\s\S]*孙宁[\s\S]*138\*\*\*\*8172/);
   assert.doesNotMatch(customers, /titleAction:|open-module-drafts|data-draft-kind="customer"/);
   assert.doesNotMatch(customers, />更多筛选</);
   assert.match(customers, /筛选客户[\s\S]*业务线[\s\S]*合作阶段/);
@@ -75,7 +79,7 @@ test("business wording and filters stay consistent", () => {
   assert.doesNotMatch(customers, /\$\{row\.contact\}<br>/);
   assert.match(customers, /data-search-text="\$\{row\.name\} \$\{row\.shortName\} \$\{row\.contact\} \$\{row\.mobile\}"/);
   assert.doesNotMatch(customers, /followUpMeta|天未跟进|今天待跟进|天未联系/);
-  assert.match(customers, /共 \$\{resultCount\} 家客户[\s\S]*查看 \$\{resultCount\} 家客户/);
+  assert.match(customers, /共 \$\{resultCount\} 家客户[\s\S]*查看 \$\{currentResultCount\} 条结果/);
   assert.doesNotMatch(customers, /title: "客户", subtitle:/);
   for (const text of ["跟进记录", "日程安排", "沟通记录", "列表", "时间倒序"]) {
     assert.match(records, new RegExp(text));
@@ -367,4 +371,12 @@ test("customer drafts and archives live in the customer module", () => {
   assert.doesNotMatch(profile, /我的归档|open-my-archive/);
   assert.doesNotMatch(actions, /action === "open-my-archive"/);
   assert.match(actions, /action === "restore-and-edit"[\s\S]*navigate\("customer-form"\)[\s\S]*navigate\("version-diff"\)/);
+});
+
+test("customer search is shared by saved, draft, and archived tabs", () => {
+  const customers = app.slice(app.indexOf("function customersScreen"), app.indexOf("function dedupeScreen"));
+  const inputActions = app.slice(app.indexOf('document.addEventListener("input"'));
+  assert.match(customers, /filterCustomerRows\(customerRows\)[\s\S]*filterCustomerRows\(draftRows\)[\s\S]*filterCustomerRows\(archivedRows\)/);
+  assert.match(customers, /row\.name, row\.shortName, row\.contact, row\.mobile/);
+  assert.match(inputActions, /event\.target\.id === "customerSearch"[\s\S]*customerSearchQuery = event\.target\.value[\s\S]*renderPhone\(\)/);
 });

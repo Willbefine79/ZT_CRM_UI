@@ -152,6 +152,7 @@ const initialState = () => ({
   workbenchSchedulesExpanded: false,
   moduleDraftListOpen: "",
   customerListTab: "saved",
+  customerSearchQuery: "",
   createdWorkbenchSchedules: [],
   createdWorkbenchTodos: [],
   recordsCalendarMode: "day",
@@ -621,33 +622,48 @@ function customersScreen() {
     { name: "澄海精密制造", shortName: "澄海精密", contact: "赵敏 · 行政经理", mobile: "136****5178", businessLines: [{ line: "会奖服务", stage: "已终止" }] }
   ];
   if (state.restored["inactive-customer"]) customerRows.push({ name: "北辰工业系统", shortName: "北辰工业", contact: "暂无联系人", mobile: "", businessLines: [{ line: "商旅", stage: "潜在" }] });
+  const draftRows = [
+    { name: "远航国际商旅", shortName: "远航国际", contact: "赵珊", mobile: "138****5169", businessLines: [{ line: "商旅", stage: "潜在" }] }
+  ];
+  const archivedRows = state.restored["inactive-customer"] ? [] : [
+    { name: "北辰工业系统", shortName: "北辰工业", contact: "孙宁", mobile: "138****8172", businessLines: [{ line: "商旅", stage: "潜在" }] }
+  ];
   const relations = ["潜在", "跟进中", "合作中", "已终止"];
-  const filteredRows = customerRows.filter((row) => row.businessLines.some((item) =>
-    (!state.customerBusinessLineFilter || item.line === state.customerBusinessLineFilter)
-      && (!state.customerRelationFilter || item.stage === state.customerRelationFilter)));
+  const searchQuery = state.customerSearchQuery.trim().toLocaleLowerCase("zh-CN");
+  const filterCustomerRows = (rows) => rows.filter((row) => {
+    const matchesSearch = !searchQuery || [row.name, row.shortName, row.contact, row.mobile]
+      .join(" ").toLocaleLowerCase("zh-CN").includes(searchQuery);
+    const matchesFilters = row.businessLines.some((item) =>
+      (!state.customerBusinessLineFilter || item.line === state.customerBusinessLineFilter)
+        && (!state.customerRelationFilter || item.stage === state.customerRelationFilter));
+    return matchesSearch && matchesFilters;
+  });
+  const filteredRows = filterCustomerRows(customerRows);
+  const filteredDraftRows = filterCustomerRows(draftRows);
+  const filteredArchivedRows = filterCustomerRows(archivedRows);
   const activeCount = [state.customerBusinessLineFilter, state.customerRelationFilter].filter(Boolean).length;
   let resultCount = 38;
   if (state.customerBusinessLineFilter) resultCount = Math.min(resultCount, 32);
   if (state.customerRelationFilter) resultCount = Math.min(resultCount, 24);
+  if (searchQuery) resultCount = filteredRows.length;
   const quickTags = [
     state.customerBusinessLineFilter ? ["businessLine", state.customerBusinessLineFilter] : null,
     state.customerRelationFilter ? ["relation", `阶段：${state.customerRelationFilter}`] : null
   ].filter(Boolean);
   const tabs = [["saved", "已保存"], ["draft", "草稿"], ["archived", "已归档"]];
-  const savedContent = `<div class="customer-search-row"><input id="customerSearch" class="search-box" type="search" placeholder="搜索客户、联系人或手机号" aria-label="搜索客户、联系人或手机号"><button class="customer-filter-button" type="button" data-action="toggle-filters" data-scope="customer" aria-expanded="${state.customerFiltersOpen}">筛选${activeCount ? `<b>${activeCount}</b>` : ""}</button></div>
-    ${quickTags.length ? `<div class="quick-filter-strip" aria-label="已选筛选条件">${quickTags.map(([key, label]) => `<button class="quick-filter-tag" type="button" data-action="remove-customer-filter" data-filter="${key}">${escapeHtml(label)} <span>×</span></button>`).join("")}</div>` : ""}
-    <div class="customer-list-toolbar"><strong>共 ${resultCount} 家客户</strong><div class="customer-sort-menu"><button class="customer-sort-trigger" type="button" data-action="toggle-customer-sort" aria-expanded="${state.customerSortMenuOpen}">${escapeHtml(state.customerSort)}⌄</button>${state.customerSortMenuOpen ? `<div class="compact-menu">${["最近沟通", "最近创建"].map((item) => `<button class="${state.customerSort === item ? "active" : ""}" type="button" data-action="set-customer-sort" data-value="${item}">${item}</button>`).join("")}</div>` : ""}</div></div>
+  const currentResultCount = { saved: resultCount, draft: filteredDraftRows.length, archived: filteredArchivedRows.length }[state.customerListTab] ?? resultCount;
+  const sharedSearch = `<div class="customer-search-row"><input id="customerSearch" class="search-box" type="search" value="${escapeHtml(state.customerSearchQuery)}" placeholder="搜索客户、联系人或手机号" aria-label="搜索客户、联系人或手机号"><button class="customer-filter-button" type="button" data-action="toggle-filters" data-scope="customer" aria-expanded="${state.customerFiltersOpen}">筛选${activeCount ? `<b>${activeCount}</b>` : ""}</button></div>
+    ${quickTags.length ? `<div class="quick-filter-strip" aria-label="已选筛选条件">${quickTags.map(([key, label]) => `<button class="quick-filter-tag" type="button" data-action="remove-customer-filter" data-filter="${key}">${escapeHtml(label)} <span>×</span></button>`).join("")}</div>` : ""}`;
+  const savedContent = `<div class="customer-list-toolbar"><strong>共 ${resultCount} 家客户</strong><div class="customer-sort-menu"><button class="customer-sort-trigger" type="button" data-action="toggle-customer-sort" aria-expanded="${state.customerSortMenuOpen}">${escapeHtml(state.customerSort)}⌄</button>${state.customerSortMenuOpen ? `<div class="compact-menu">${["最近沟通", "最近创建"].map((item) => `<button class="${state.customerSort === item ? "active" : ""}" type="button" data-action="set-customer-sort" data-value="${item}">${item}</button>`).join("")}</div>` : ""}</div></div>
     ${filteredRows.length ? `<div class="list-panel customer-results">${filteredRows.map(customerRow).join("")}</div><div class="notice" data-search-empty hidden>没有找到匹配客户。</div>` : `<div class="notice">当前条件下没有客户。</div>`}
-    ${state.customerFiltersOpen ? `<div class="customer-filter-overlay" role="dialog" aria-modal="true" aria-labelledby="customerFilterTitle"><button class="filter-sheet-scrim" type="button" data-action="close-customer-filters" aria-label="关闭筛选"></button><section class="customer-filter-sheet"><header><strong id="customerFilterTitle">筛选客户</strong><button class="text-button" type="button" data-action="reset-customer-filters">重置</button></header><div class="customer-filter-body"><div class="sheet-filter-group"><span>业务线</span><div>${BUSINESS_LINES.map((line) => `<button class="sheet-option ${state.customerBusinessLineFilter === line ? "active" : ""}" type="button" data-action="set-customer-line-filter" data-value="${line}">${line}</button>`).join("")}</div></div><div class="sheet-filter-group"><span>合作阶段</span><div>${relations.map((relation) => `<button class="sheet-option ${state.customerRelationFilter === relation ? "active" : ""}" type="button" data-action="set-customer-filter" data-value="${relation}">${relation}</button>`).join("")}</div></div></div><button class="primary-button filter-result-button" type="button" data-action="apply-customer-filters">查看 ${resultCount} 家客户</button></section></div>` : ""}`;
-  const draftContent = `<div class="customer-list-toolbar customer-state-toolbar"><strong>1 条客户草稿</strong></div><div class="list-panel customer-state-list"><button class="customer-card customer-state-row" type="button" data-action="open-customer-draft"><span class="customer-copy"><strong>远航国际商旅</strong><span class="customer-context-line">商旅 · 潜在 · 今天 09:42</span></span><span class="item-action" aria-hidden="true">›</span></button></div>`;
-  const archivedContent = state.restored["inactive-customer"]
-    ? `<div class="customer-list-toolbar customer-state-toolbar"><strong>0 家已归档客户</strong></div><div class="notice">暂无已归档客户。</div>`
-    : `<div class="customer-list-toolbar customer-state-toolbar"><strong>1 家已归档客户</strong></div><div class="list-panel customer-state-list"><button class="customer-card customer-state-row" type="button" data-action="open-customer-archive"><span class="customer-copy"><strong>北辰工业系统</strong><span class="customer-context-line">商旅 · 潜在 · 归档于 8 月 18 日</span></span><span class="item-action" aria-hidden="true">›</span></button></div>`;
+    `;
+  const draftContent = `<div class="customer-list-toolbar customer-state-toolbar"><strong>${filteredDraftRows.length} 条客户草稿</strong></div>${filteredDraftRows.length ? `<div class="list-panel customer-state-list">${filteredDraftRows.map((row) => `<button class="customer-card customer-state-row" type="button" data-action="open-customer-draft" data-search-row data-search-text="${row.name} ${row.shortName} ${row.contact} ${row.mobile}"><span class="customer-copy"><strong>${row.name}</strong><span class="customer-context-line">商旅 · 潜在 · 今天 09:42</span></span><span class="item-action" aria-hidden="true">›</span></button>`).join("")}</div>` : `<div class="notice">没有找到匹配的客户草稿。</div>`}`;
+  const archivedContent = `<div class="customer-list-toolbar customer-state-toolbar"><strong>${filteredArchivedRows.length} 家已归档客户</strong></div>${filteredArchivedRows.length ? `<div class="list-panel customer-state-list">${filteredArchivedRows.map((row) => `<button class="customer-card customer-state-row" type="button" data-action="open-customer-archive" data-search-row data-search-text="${row.name} ${row.shortName} ${row.contact} ${row.mobile}"><span class="customer-copy"><strong>${row.name}</strong><span class="customer-context-line">商旅 · 潜在 · 归档于 8 月 18 日</span></span><span class="item-action" aria-hidden="true">›</span></button>`).join("")}</div>` : `<div class="notice">${archivedRows.length ? "没有找到匹配的已归档客户。" : "暂无已归档客户。"}</div>`}`;
   const tabContent = { saved: savedContent, draft: draftContent, archived: archivedContent }[state.customerListTab] || savedContent;
   return mobileFrame({
     title: "客户", nav: "customers",
     action: `<button class="mobile-icon-button" type="button" data-action="start-customer-create" title="新增客户" aria-label="新增客户">+</button>`,
-    body: `<div class="customer-module-tabs" role="tablist" aria-label="客户状态">${tabs.map(([id, label]) => `<button class="customer-module-tab ${state.customerListTab === id ? "active" : ""}" type="button" role="tab" data-action="set-customer-list-tab" data-tab="${id}" aria-selected="${state.customerListTab === id}">${label}</button>`).join("")}</div><div class="customer-module-content" role="tabpanel">${tabContent}</div>`
+    body: `<div class="customer-module-tabs" role="tablist" aria-label="客户状态">${tabs.map(([id, label]) => `<button class="customer-module-tab ${state.customerListTab === id ? "active" : ""}" type="button" role="tab" data-action="set-customer-list-tab" data-tab="${id}" aria-selected="${state.customerListTab === id}">${label}</button>`).join("")}</div>${sharedSearch}<div class="customer-module-content" role="tabpanel">${tabContent}</div>${state.customerFiltersOpen ? `<div class="customer-filter-overlay" role="dialog" aria-modal="true" aria-labelledby="customerFilterTitle"><button class="filter-sheet-scrim" type="button" data-action="close-customer-filters" aria-label="关闭筛选"></button><section class="customer-filter-sheet"><header><strong id="customerFilterTitle">筛选客户</strong><button class="text-button" type="button" data-action="reset-customer-filters">重置</button></header><div class="customer-filter-body"><div class="sheet-filter-group"><span>业务线</span><div>${BUSINESS_LINES.map((line) => `<button class="sheet-option ${state.customerBusinessLineFilter === line ? "active" : ""}" type="button" data-action="set-customer-line-filter" data-value="${line}">${line}</button>`).join("")}</div></div><div class="sheet-filter-group"><span>合作阶段</span><div>${relations.map((relation) => `<button class="sheet-option ${state.customerRelationFilter === relation ? "active" : ""}" type="button" data-action="set-customer-filter" data-value="${relation}">${relation}</button>`).join("")}</div></div></div><button class="primary-button filter-result-button" type="button" data-action="apply-customer-filters">查看 ${currentResultCount} 条结果</button></section></div>` : ""}`
   });
 }
 
@@ -2987,12 +3003,22 @@ document.addEventListener("input", (event) => {
     });
     return;
   }
+  if (event.target.id === "customerSearch") {
+    state.customerSearchQuery = event.target.value;
+    renderPhone();
+    requestAnimationFrame(() => {
+      const search = document.querySelector("#customerSearch");
+      search?.focus();
+      search?.setSelectionRange(search.value.length, search.value.length);
+    });
+    return;
+  }
   if (event.target.id === "customerName") {
     state.customerDedupeStatus = "idle";
     document.querySelector("[data-dedupe-status]")?.remove();
     return;
   }
-  if (!["customerSearch", "recordSearch"].includes(event.target.id)) return;
+  if (event.target.id !== "recordSearch") return;
   const query = event.target.value.trim().toLocaleLowerCase("zh-CN");
   let visible = 0;
   document.querySelectorAll("[data-search-row]").forEach((row) => {
