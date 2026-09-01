@@ -6,7 +6,14 @@ const REVIEW_KEY = "zt-crm-review-status-v1";
 const BUSINESS_LINES = ["商旅", "会奖服务", "企业用车"];
 const CUSTOMER_OWNER_ROLES = ["项目经理", "前端销售", "后端销售"];
 const CUSTOMER_OWNER_PEOPLE = ["张雨", "李程", "陈晓", "周舟"];
+const RECORD_CUSTOMER_OPTIONS = [
+  { name: "华东智造科技", contact: "王磊", mobile: "138****6621" },
+  { name: "远见数字供应链", contact: "陈嘉", mobile: "139****2806" },
+  { name: "新港工业设备", contact: "周宁", mobile: "137****9012" },
+  { name: "澄海精密制造", contact: "赵敏", mobile: "136****5178" }
+];
 const PROTOTYPE_TODAY = "2026-08-27";
+const PROTOTYPE_TIME = "17:00";
 const FOLLOW_UP_WEEK = [
   { date: "2026-08-24", weekday: "一", day: "24" },
   { date: "2026-08-25", weekday: "二", day: "25" },
@@ -19,6 +26,7 @@ const FOLLOW_UP_WEEK = [
 const BASE_SCHEDULES = [
   { id: "schedule-factory-visit", date: "2026-08-27", time: "09:30", endTime: "10:30", title: "客户线下拜访", customer: "华东智造科技", businessLines: ["企业用车"], channel: "线下拜访" },
   { id: "schedule-framework-call", date: "2026-08-27", time: "14:00", endTime: "", title: "方案沟通", customer: "海天科技集团", businessLines: ["商旅", "企业用车"], channel: "微信", linkedRecordSubject: "年度框架及用车方案沟通" },
+  { id: "schedule-contract-check", date: "2026-08-27", time: "18:30", endTime: "19:00", title: "合同条款确认", customer: "远见数字供应链", businessLines: ["商旅"], channel: "手机" },
   { id: "schedule-quote-review", date: "2026-08-28", time: "10:00", endTime: "11:00", title: "报价方案确认会", customer: "华东智造科技", businessLines: ["商旅"], channel: "手机" }
 ];
 const BASE_FORMAL_RECORDS = [
@@ -31,9 +39,9 @@ const screens = [
   {
     id: "workbench", group: "总览", nav: "工作台", title: "工作台",
     refs: ["FR-13", "§7 信息架构", "UJ-1 / UJ-3"],
-    objective: "用紧凑首屏承载高频新增、当天日程、独立待处理和最近正式跟进事实。",
-    reviews: ["新增客户和新增沟通记录作为两个独立快捷模块。", "跟进记录汇总今日日程和最近 1 天的正式沟通。", "待处理放在页面底部，并通过独立页面区分待处理与最近一周已处理。"],
-    decisions: ["待处理不进入跟进记录的单日或列表视图。", "AI 未确认草稿只在工作台待处理和我的草稿入口出现。"]
+    objective: "用紧凑首屏承载高频新增、今日安排和必须由当前用户处理的事项。",
+    reviews: ["新增客户和新增沟通记录作为两个独立快捷模块。", "今日安排只预览当天日程，完整日程与沟通历史统一进入跟进记录。", "待处理放在页面底部，并通过独立页面区分待处理与最近一周已处理。"],
+    decisions: ["待处理不进入跟进记录的日期或全部视图。", "普通草稿回到客户或跟进记录模块；AI 未确认草稿仍由工作台待处理承接。"]
   },
   {
     id: "customers", group: "客户", nav: "客户列表", title: "客户列表",
@@ -59,9 +67,9 @@ const screens = [
   {
     id: "customer-detail", group: "客户", nav: "客户详情", title: "客户详情",
     refs: ["FR-7", "FR-4 至 FR-6"],
-    objective: "在同一客户主体下按业务线查看合作阶段、负责人、联系人和正式沟通。",
-    reviews: ["支持全部业务线总览和单业务线视图，切换后相关信息同步变化。", "概览优先展示最近沟通、动态负责人、主要联系人和客户资料摘要。", "联系人不提供拨打入口；新增沟通必须明确继承当前业务线。"],
-    decisions: ["企业详细信息跨业务线共享，合作阶段、负责人、联系人关联和沟通记录按业务线维护。", "全部业务线视图不生成虚假的全局合作阶段。"]
+    objective: "在一个客户主体下统一管理多条业务关系，并按所选关系查看业务数据。",
+    reviews: ["业务关系列表是唯一的业务线入口，复选框筛选下方数据，行点击打开局部详情。", "概览只保留相关日程与最近沟通，沟通记录和联系人使用相同筛选范围。", "详细信息承载客户公共资料，不受业务关系筛选影响。"],
+    decisions: ["企业详细信息跨业务线共享，合作阶段、负责人和联系人关联按业务关系维护。", "多业务线沟通与所选关系相交时只显示一次。"]
   },
   {
     id: "manual-record", group: "沟通", nav: "手工沟通", title: "新增沟通记录",
@@ -75,7 +83,7 @@ const screens = [
     refs: ["FR-9", "FR-7 最近沟通"],
     objective: "在同一页通过单日和列表两种视图查看日程计划与已发生的正式沟通。",
     reviews: ["默认单日视图，通过最近一行日期快速切换具体日期。", "列表默认覆盖全部时间，并可按业务线和时间组合筛选。", "日程展示客户、多条业务线及微信/手机/线下拜访渠道；新增日程结束时间选填，业务线支持多选。"],
-    decisions: ["日程与沟通使用两个独立的正常卡片，不把日程做成弱化附属信息。", "草稿、待处理不进入单日或列表视图。"]
+    decisions: ["日程与沟通使用两个独立的正常卡片，不把日程做成弱化附属信息。", "沟通草稿在模块内单独展示，不进入日期内容或正式记录列表。"]
   },
   {
     id: "record-detail", group: "沟通", nav: "沟通详情", title: "沟通记录详情",
@@ -113,18 +121,18 @@ const screens = [
     decisions: ["前端按正常编辑理解，不暴露补充、纠错或修订类型。", "编辑保留一条记录与多个业务线议题的结构。"]
   },
   {
-    id: "governance", group: "治理", nav: "我的归档", title: "我的归档",
+    id: "governance", group: "治理", nav: "归档详情", title: "归档详情",
     refs: ["UJ-5", "FR-3 / FR-9", "FR-14"],
-    objective: "让销售查看自己归档的客户和沟通，并在恢复后继续编辑。",
+    objective: "从客户或沟通模块查看归档对象，并在恢复后继续编辑。",
     reviews: ["客户与沟通记录分开查看，只显示本人归档或仍有维护权限的对象。", "归档状态可查看完整资料和历史，但保持只读。", "点击恢复并编辑时先恢复、记录审计，再进入标准编辑页。"],
     decisions: ["不允许直接覆盖归档对象。", "恢复不自动恢复已独立归档的子对象。"]
   },
   {
     id: "profile", group: "治理", nav: "我的", title: "我的",
     refs: ["§7 信息架构", "FR-14 权限"],
-    objective: "提供个人与所属企业上下文，集中进入本人草稿和本人归档数据。",
-    reviews: ["显示所属企业、用户、角色和组织范围。", "私人草稿入口与正式沟通列表分离。", "我的归档只展示本人归档或仍有维护权限的数据。"],
-    decisions: ["销售管理者默认不能看他人私人草稿。", "销售的我的归档不等于管理员全量归档治理。"]
+    objective: "提供个人、所属企业和数据权限上下文。",
+    reviews: ["显示所属企业、用户、角色和组织范围。", "我的页面只承载个人身份与权限信息。"],
+    decisions: ["客户草稿与已归档客户统一回到客户模块。", "沟通草稿保留在跟进记录模块。"]
   }
 ];
 
@@ -141,6 +149,9 @@ const initialState = () => ({
   workbenchHasUnread: true,
   workbenchView: "main",
   workbenchPendingTab: "active",
+  workbenchSchedulesExpanded: false,
+  moduleDraftListOpen: "",
+  customerListTab: "saved",
   createdWorkbenchSchedules: [],
   createdWorkbenchTodos: [],
   recordsCalendarMode: "day",
@@ -161,7 +172,12 @@ const initialState = () => ({
   scheduleDraftChannel: "微信",
   scheduleDraftDetail: "",
   scheduleDraftError: "",
+  scheduleEditingId: "",
+  scheduleOverrides: {},
+  canceledScheduleIds: [],
+  openScheduleSwipeId: "",
   selectedScheduleId: "",
+  recordingScheduleId: "",
   followUpSelectedDate: PROTOTYPE_TODAY,
   customerFiltersOpen: false,
   customerSort: "最近沟通",
@@ -225,6 +241,8 @@ const initialState = () => ({
   customerBackendSales: "李程",
   customerOwnerAssignments: [{ role: "前端销售", person: "张雨" }, { role: "后端销售", person: "李程" }],
   customerDetailBusinessLine: "all",
+  customerSelectedBusinessLines: ["商旅", "会奖服务"],
+  customerRelationDetailLine: "",
   customerBusinessRelations: [
     { line: "商旅", stage: "潜在", owners: [{ role: "前端销售", person: "张雨" }, { role: "后端销售", person: "李程" }], contacts: ["陈嘉"], lastTime: "8 月 18 日 09:30", lastChannel: "线上会议", lastSubject: "数据接口范围确认", lastSummary: "双方确认首期接口范围，待进一步核对字段清单。" },
     { line: "会奖服务", stage: "跟进中", owners: [{ role: "项目经理", person: "陈晓" }], contacts: ["陈嘉"], lastTime: "8 月 12 日 14:00", lastChannel: "线下拜访", lastSubject: "年度会议需求沟通", lastSummary: "客户正在确认参会规模和举办城市。" }
@@ -232,6 +250,7 @@ const initialState = () => ({
   customerFormError: "",
   customerDedupeStatus: "idle",
   customerPickerOpen: false,
+  recordCustomerSearch: "",
   customerMinimalProfile: false,
   customerSaveConflict: false,
   contactRows: 1,
@@ -288,7 +307,8 @@ const initialState = () => ({
   manualTopics: {
     "商旅": { subject: "实施周期与报价方案沟通", keyPoints: "客户认可初步方案，希望补充实施周期、交付边界和正式报价。", result: "实施周期与报价仍待确认。" }
   },
-  communicationEntryMode: "ai",
+  communicationEntryMode: "manual",
+  aiManualHydrated: false,
   draftExitPrompt: "",
   draftExitFallback: "",
   manualLocation: "",
@@ -385,6 +405,7 @@ function escapeHtml(value) {
 }
 
 function renderNav() {
+  if (!els.screenNav) return;
   let previousGroup = "";
   els.screenNav.innerHTML = screens.map((screen, index) => {
     const group = screen.group !== previousGroup ? `<div class="nav-group">${escapeHtml(screen.group)}</div>` : "";
@@ -400,6 +421,7 @@ function renderNav() {
 }
 
 function renderReview() {
+  if (!els.reviewContent) return;
   const screen = screenById[state.activeScreen];
   els.stageTitle.textContent = screen.nav;
   els.reviewTitle.textContent = screen.title;
@@ -456,7 +478,7 @@ function aiAssistantLayer() {
 
 function mobileFrame({ title, subtitle = "", titleAction = "", body, back = "", action = "", nav = "", sticky = "", hideHeader = false }) {
   return `<div class="mobile-app ${nav ? "has-bottom-nav" : ""} ${sticky ? "has-sticky-actions" : ""} ${hideHeader ? "no-page-header" : ""}">
-    <div class="mobile-status"><span>9:41</span><span class="signal">●●● 5G ▰</span></div>
+    <div class="mobile-status"><span>${PROTOTYPE_TIME}</span><span class="signal">●●● 5G ▰</span></div>
     ${hideHeader ? "" : `<header class="mobile-header">
       ${back ? `<button class="mobile-icon-button" type="button" data-action="navigate-back" data-fallback="${back}" title="返回" aria-label="返回">‹</button>` : ""}
       <div class="mobile-header-copy"><div class="mobile-header-title-row"><h2>${escapeHtml(title)}</h2>${titleAction}</div>${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}</div>
@@ -471,8 +493,20 @@ function mobileFrame({ title, subtitle = "", titleAction = "", body, back = "", 
 
 function getSchedules() {
   return [...BASE_SCHEDULES, ...state.createdWorkbenchSchedules]
-    .filter((item) => !item.linkedRecordSubject)
+    .map((item) => state.scheduleOverrides[item.id] || item)
+    .filter((item) => !state.canceledScheduleIds.includes(item.id))
     .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+}
+
+function scheduleStatus(item) {
+  if (item.linkedRecordSubject) return { key: "recorded", label: "已记录" };
+  if (item.date < PROTOTYPE_TODAY) return { key: "ended", label: "待记录" };
+  if (item.date > PROTOTYPE_TODAY) return { key: "upcoming", label: "待开始" };
+  const demoTime = PROTOTYPE_TIME;
+  const end = item.endTime || item.time;
+  if (end < demoTime) return { key: "ended", label: "待记录" };
+  if (item.time <= demoTime && end >= demoTime) return { key: "progress", label: "进行中" };
+  return { key: "upcoming", label: "待开始" };
 }
 
 function recordBusinessLines(record) {
@@ -526,7 +560,7 @@ function getPendingTodos() {
   const baseTodos = [
     { kind: "客户查重", priorityClass: "important", title: "选择重复客户或提交加入审批", context: "华东智造科技", action: "open-dedupe-candidate" },
     { kind: "权限申请", priorityClass: "important", title: "商旅业务线申请等待审批", context: "远航国际商旅", action: "open-line-access-pending" },
-    { kind: "日程结束", priorityClass: "important", title: "记录本次沟通或确认未发生", context: "客户线下拜访 · 今天 10:30", action: "open-expired-schedule" },
+    { kind: "日程结束", priorityClass: "important", title: "处理已结束的客户拜访", context: "客户线下拜访 · 今天 10:30", action: "open-expired-schedule" },
     { kind: "材料失败", priorityClass: "normal", title: "重新处理材料或转手工录入", context: "华东智造科技会议纪要", action: "open-failed-material" },
     { kind: "管理者指派", priorityClass: "normal", title: "核对海天科技客户归属", context: "李经理指派 · 今天 09:15", action: "open-manager-assignment" }
   ];
@@ -546,18 +580,25 @@ function workbenchScreen() {
   const todos = getPendingTodos();
   if (state.workbenchView === "pending") return workbenchPendingScreen(todos);
   const currentSchedules = schedules.filter((item) => item.date === PROTOTYPE_TODAY);
-  const recentRecords = getFormalRecords().filter((row) => row.date === PROTOTYPE_TODAY);
-  const scheduleRows = currentSchedules.map((item) => {
-    return `<button class="schedule-row" type="button" data-action="open-workbench-calendar"><time datetime="${item.date}T${item.time}"><strong>${escapeHtml(item.time)}${item.endTime ? "-" : ""}</strong>${item.endTime ? `<strong>${escapeHtml(item.endTime)}</strong>` : ""}</time><span class="follow-up-preview-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(scheduleMeta(item))}</small></span><span class="item-action" aria-hidden="true">›</span></button>`;
+  const activeSchedules = currentSchedules.filter((item) => ["progress", "upcoming"].includes(scheduleStatus(item).key));
+  const completedSchedules = currentSchedules
+    .filter((item) => ["ended", "recorded"].includes(scheduleStatus(item).key))
+    .reverse();
+  const visibleSchedules = state.workbenchSchedulesExpanded
+    ? [...activeSchedules, ...completedSchedules]
+    : activeSchedules;
+  const scheduleRows = visibleSchedules.map((item) => {
+    const status = scheduleStatus(item);
+    const scheduleId = item.id || `${item.date}-${item.time}-${item.title}`;
+    return `<button class="schedule-row workbench-schedule ${status.key}" type="button" data-action="open-workbench-schedule" data-schedule-id="${escapeHtml(scheduleId)}"><time datetime="${item.date}T${item.time}"><strong>${escapeHtml(item.time)}${item.endTime ? "-" : ""}</strong>${item.endTime ? `<strong>${escapeHtml(item.endTime)}</strong>` : ""}</time><span class="follow-up-preview-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(scheduleMeta(item))}</small><span class="schedule-state ${status.key}">${escapeHtml(status.label)}</span></span><span class="item-action" aria-hidden="true">›</span></button>`;
   }).join("");
-  const todoRows = todos.slice(0, 2).map(pendingTodoRow).join("");
-  const recentRows = recentRecords.map((row) => `<button class="recent-follow-up-row" type="button" data-action="select-record" data-customer="${escapeHtml(row.customer)}" data-time="${escapeHtml(row.displayTime)}" data-channel="${escapeHtml(row.channel)}" data-business-line="${escapeHtml(recordBusinessLines(row)[0] || "")}" data-business-lines="${escapeHtml(recordBusinessLines(row).join("|"))}" data-subject="${escapeHtml(row.subject)}"><time datetime="${row.date}T${row.time}">${escapeHtml(row.time)}</time><span class="follow-up-preview-copy"><strong>${escapeHtml(row.subject)}</strong><small>${escapeHtml(row.customer)} · ${escapeHtml(businessLineLabel(row))} · ${escapeHtml(row.channel)}</small></span><span class="item-action" aria-hidden="true">›</span></button>`).join("");
+  const todoRows = todos.slice(0, 3).map(pendingTodoRow).join("");
   return mobileFrame({
     title: "", nav: "workbench", hideHeader: true,
     body: `<h2 class="visually-hidden">工作台</h2><div class="workbench-identity"><div class="workbench-person"><strong>张雨</strong><span class="identity-divider" aria-hidden="true"></span><span>海天科技集团</span></div><div class="workbench-head-tools"><span class="workbench-header-date"><strong>周四</strong><small>08.27</small></span><button class="workbench-notification" type="button" data-action="toggle-workbench-notifications" title="通知" aria-label="通知${state.workbenchHasUnread ? "，有未读消息" : ""}" aria-expanded="${state.workbenchNotificationOpen}" aria-controls="workbenchNotificationPanel"><span aria-hidden="true">🔔</span>${state.workbenchHasUnread ? `<i aria-hidden="true"></i>` : ""}</button></div>${state.workbenchNotificationOpen ? `<div class="workbench-notification-panel" id="workbenchNotificationPanel" role="dialog" aria-label="通知"><div class="notification-panel-heading"><strong>通知</strong></div><div class="notification-item"><strong>商旅业务线加入申请已通过</strong><small>远见数字供应链 · 1 小时前</small></div><button class="text-button full-button" type="button" data-action="mark-workbench-notifications-read">标为已读</button></div>` : ""}</div>
-      <div class="workbench-actions"><button class="workbench-action-module customer-module" type="button" data-action="start-customer-create"><span aria-hidden="true">＋</span><strong>新增客户</strong></button><button class="workbench-action-module follow-up-module" type="button" data-screen="ai-material"><span aria-hidden="true">＋</span><strong>新增沟通记录</strong></button></div>
-      <section class="workbench-follow-up-overview"><div class="workbench-section-heading"><h3>跟进记录</h3><button class="section-more" type="button" data-action="open-all-records">查看全部 ›</button></div><section class="workbench-overview-card follow-up-type-card schedule-preview-card"><div class="workbench-card-heading"><div class="heading-summary"><span class="follow-up-color-label" aria-hidden="true"></span><h3>今日日程</h3></div><span>${currentSchedules.length} 条</span></div><div class="workbench-card-list">${scheduleRows || `<div class="workbench-empty">今日暂无日程</div>`}</div></section><section class="workbench-overview-card follow-up-type-card communication-preview-card"><div class="workbench-card-heading"><div class="heading-summary"><span class="follow-up-color-label" aria-hidden="true"></span><h3>最近沟通</h3></div><span>近 1 天 · ${recentRecords.length} 条</span></div><div class="workbench-card-list">${recentRows || `<div class="workbench-empty">最近 1 天暂无沟通记录</div>`}</div></section></section>
-      <section class="workbench-overview-card pending-overview"><div class="workbench-card-heading"><div class="heading-summary"><h3>待处理</h3><span>${todos.length} 项</span></div><button class="section-more" type="button" data-action="open-workbench-pending">更多 ›</button></div><div class="workbench-card-list">${todoRows}</div></section>`
+      <div class="workbench-actions"><button class="workbench-action-module customer-module" type="button" data-action="start-customer-create"><span aria-hidden="true">＋</span><strong>新增客户</strong></button><button class="workbench-action-module follow-up-module" type="button" data-action="open-workbench-record-create"><span aria-hidden="true">＋</span><strong>新增沟通记录</strong></button></div>
+      <section class="workbench-overview-card schedule-preview-card"><div class="workbench-card-heading"><div class="heading-summary"><span class="follow-up-color-label" aria-hidden="true"></span><h3>今日安排</h3><span>${currentSchedules.length} 条</span></div></div><div class="workbench-card-list">${scheduleRows || `<div class="workbench-empty">今天暂无待开始日程</div>`}</div>${completedSchedules.length ? `<button class="schedule-expand-button" type="button" data-action="toggle-workbench-schedules" aria-expanded="${state.workbenchSchedulesExpanded}"><span>${state.workbenchSchedulesExpanded ? "收起已结束" : `已结束 ${completedSchedules.length} 条`}</span><span class="schedule-expand-icon" aria-hidden="true">${state.workbenchSchedulesExpanded ? "⌃" : "⌄"}</span></button>` : ""}</section>
+      <section class="workbench-overview-card pending-overview"><div class="workbench-card-heading"><div class="heading-summary"><h3>待处理</h3><span>${todos.length} 项</span></div><button class="section-more" type="button" data-action="open-workbench-pending">更多 ›</button></div><div class="workbench-card-list">${todoRows}</div></section>${scheduleDetailLayer(schedules)}${recordsCreateLayer()}`
   });
 }
 
@@ -592,14 +633,21 @@ function customersScreen() {
     state.customerBusinessLineFilter ? ["businessLine", state.customerBusinessLineFilter] : null,
     state.customerRelationFilter ? ["relation", `阶段：${state.customerRelationFilter}`] : null
   ].filter(Boolean);
+  const tabs = [["saved", "已保存"], ["draft", "草稿"], ["archived", "已归档"]];
+  const savedContent = `<div class="customer-search-row"><input id="customerSearch" class="search-box" type="search" placeholder="搜索客户、联系人或手机号" aria-label="搜索客户、联系人或手机号"><button class="customer-filter-button" type="button" data-action="toggle-filters" data-scope="customer" aria-expanded="${state.customerFiltersOpen}">筛选${activeCount ? `<b>${activeCount}</b>` : ""}</button></div>
+    ${quickTags.length ? `<div class="quick-filter-strip" aria-label="已选筛选条件">${quickTags.map(([key, label]) => `<button class="quick-filter-tag" type="button" data-action="remove-customer-filter" data-filter="${key}">${escapeHtml(label)} <span>×</span></button>`).join("")}</div>` : ""}
+    <div class="customer-list-toolbar"><strong>共 ${resultCount} 家客户</strong><div class="customer-sort-menu"><button class="customer-sort-trigger" type="button" data-action="toggle-customer-sort" aria-expanded="${state.customerSortMenuOpen}">${escapeHtml(state.customerSort)}⌄</button>${state.customerSortMenuOpen ? `<div class="compact-menu">${["最近沟通", "最近创建"].map((item) => `<button class="${state.customerSort === item ? "active" : ""}" type="button" data-action="set-customer-sort" data-value="${item}">${item}</button>`).join("")}</div>` : ""}</div></div>
+    ${filteredRows.length ? `<div class="list-panel customer-results">${filteredRows.map(customerRow).join("")}</div><div class="notice" data-search-empty hidden>没有找到匹配客户。</div>` : `<div class="notice">当前条件下没有客户。</div>`}
+    ${state.customerFiltersOpen ? `<div class="customer-filter-overlay" role="dialog" aria-modal="true" aria-labelledby="customerFilterTitle"><button class="filter-sheet-scrim" type="button" data-action="close-customer-filters" aria-label="关闭筛选"></button><section class="customer-filter-sheet"><header><strong id="customerFilterTitle">筛选客户</strong><button class="text-button" type="button" data-action="reset-customer-filters">重置</button></header><div class="customer-filter-body"><div class="sheet-filter-group"><span>业务线</span><div>${BUSINESS_LINES.map((line) => `<button class="sheet-option ${state.customerBusinessLineFilter === line ? "active" : ""}" type="button" data-action="set-customer-line-filter" data-value="${line}">${line}</button>`).join("")}</div></div><div class="sheet-filter-group"><span>合作阶段</span><div>${relations.map((relation) => `<button class="sheet-option ${state.customerRelationFilter === relation ? "active" : ""}" type="button" data-action="set-customer-filter" data-value="${relation}">${relation}</button>`).join("")}</div></div></div><button class="primary-button filter-result-button" type="button" data-action="apply-customer-filters">查看 ${resultCount} 家客户</button></section></div>` : ""}`;
+  const draftContent = `<div class="customer-list-toolbar customer-state-toolbar"><strong>1 条客户草稿</strong></div><div class="list-panel customer-state-list"><button class="customer-card customer-state-row" type="button" data-action="open-customer-draft"><span class="customer-copy"><strong>远航国际商旅</strong><span class="customer-context-line">商旅 · 潜在 · 今天 09:42</span></span><span class="item-action" aria-hidden="true">›</span></button></div>`;
+  const archivedContent = state.restored["inactive-customer"]
+    ? `<div class="customer-list-toolbar customer-state-toolbar"><strong>0 家已归档客户</strong></div><div class="notice">暂无已归档客户。</div>`
+    : `<div class="customer-list-toolbar customer-state-toolbar"><strong>1 家已归档客户</strong></div><div class="list-panel customer-state-list"><button class="customer-card customer-state-row" type="button" data-action="open-customer-archive"><span class="customer-copy"><strong>北辰工业系统</strong><span class="customer-context-line">商旅 · 潜在 · 归档于 8 月 18 日</span></span><span class="item-action" aria-hidden="true">›</span></button></div>`;
+  const tabContent = { saved: savedContent, draft: draftContent, archived: archivedContent }[state.customerListTab] || savedContent;
   return mobileFrame({
     title: "客户", nav: "customers",
     action: `<button class="mobile-icon-button" type="button" data-action="start-customer-create" title="新增客户" aria-label="新增客户">+</button>`,
-    body: `<div class="customer-search-row"><input id="customerSearch" class="search-box" type="search" placeholder="搜索客户、联系人或手机号" aria-label="搜索客户、联系人或手机号"><button class="customer-filter-button" type="button" data-action="toggle-filters" data-scope="customer" aria-expanded="${state.customerFiltersOpen}">筛选${activeCount ? `<b>${activeCount}</b>` : ""}</button></div>
-      ${quickTags.length ? `<div class="quick-filter-strip" aria-label="已选筛选条件">${quickTags.map(([key, label]) => `<button class="quick-filter-tag" type="button" data-action="remove-customer-filter" data-filter="${key}">${escapeHtml(label)} <span>×</span></button>`).join("")}</div>` : ""}
-      <div class="customer-list-toolbar"><strong>共 ${resultCount} 家客户</strong><div class="customer-sort-menu"><button class="customer-sort-trigger" type="button" data-action="toggle-customer-sort" aria-expanded="${state.customerSortMenuOpen}">${escapeHtml(state.customerSort)}⌄</button>${state.customerSortMenuOpen ? `<div class="compact-menu">${["最近沟通", "最近创建"].map((item) => `<button class="${state.customerSort === item ? "active" : ""}" type="button" data-action="set-customer-sort" data-value="${item}">${item}</button>`).join("")}</div>` : ""}</div></div>
-      ${filteredRows.length ? `<div class="list-panel customer-results">${filteredRows.map(customerRow).join("")}</div><div class="notice" data-search-empty hidden>没有找到匹配客户。</div>` : `<div class="notice">当前条件下没有客户。</div>`}
-      ${state.customerFiltersOpen ? `<div class="customer-filter-overlay" role="dialog" aria-modal="true" aria-labelledby="customerFilterTitle"><button class="filter-sheet-scrim" type="button" data-action="close-customer-filters" aria-label="关闭筛选"></button><section class="customer-filter-sheet"><header><strong id="customerFilterTitle">筛选客户</strong><button class="text-button" type="button" data-action="reset-customer-filters">重置</button></header><div class="customer-filter-body"><div class="sheet-filter-group"><span>业务线</span><div>${BUSINESS_LINES.map((line) => `<button class="sheet-option ${state.customerBusinessLineFilter === line ? "active" : ""}" type="button" data-action="set-customer-line-filter" data-value="${line}">${line}</button>`).join("")}</div></div><div class="sheet-filter-group"><span>合作阶段</span><div>${relations.map((relation) => `<button class="sheet-option ${state.customerRelationFilter === relation ? "active" : ""}" type="button" data-action="set-customer-filter" data-value="${relation}">${relation}</button>`).join("")}</div></div></div><button class="primary-button filter-result-button" type="button" data-action="apply-customer-filters">查看 ${resultCount} 家客户</button></section></div>` : ""}`
+    body: `<div class="customer-module-tabs" role="tablist" aria-label="客户状态">${tabs.map(([id, label]) => `<button class="customer-module-tab ${state.customerListTab === id ? "active" : ""}" type="button" role="tab" data-action="set-customer-list-tab" data-tab="${id}" aria-selected="${state.customerListTab === id}">${label}</button>`).join("")}</div><div class="customer-module-content" role="tabpanel">${tabContent}</div>`
   });
 }
 
@@ -609,7 +657,8 @@ function customerRow(row) {
       && (!state.customerRelationFilter || item.stage === state.customerRelationFilter)) || row.businessLines[0];
   const lineCount = row.businessLines.length > 1 ? `<small class="customer-line-count">${row.businessLines.length} 条业务线</small>` : "";
   const contextPrefix = row.businessLines.length > 1 && !state.customerBusinessLineFilter && !state.customerRelationFilter ? "最近 · " : "";
-  return `<button class="customer-card customer-list-row" type="button" data-action="select-customer" data-customer="${row.name}" data-search-row data-search-text="${row.name} ${row.shortName} ${row.contact} ${row.mobile}"><span class="customer-copy"><span class="customer-name-line"><strong>${row.name}</strong>${lineCount}</span><span class="customer-context-line">${contextPrefix}${contextualLine.line} · ${contextualLine.stage}</span></span></button>`;
+  const inactive = row.businessLines.every((item) => item.stage === "已终止");
+  return `<button class="customer-card customer-list-row ${inactive ? "customer-inactive" : ""}" type="button" data-action="select-customer" data-customer="${row.name}" data-search-row data-search-text="${row.name} ${row.shortName} ${row.contact} ${row.mobile}"><span class="customer-copy"><span class="customer-name-line"><strong>${row.name}</strong>${lineCount}</span><span class="customer-context-line">${contextPrefix}${contextualLine.line} · ${contextualLine.stage}</span></span></button>`;
 }
 
 function customerRelationsForName(name) {
@@ -639,7 +688,7 @@ function dedupeScreen() {
     return mobileFrame({
       title: "发现已有客户", subtitle: `客户主体与${selectedLine}业务线查重`, back: "customer-form",
       body: `<div class="notice warning"><strong>${lineExists ? "客户及业务线已存在" : "客户已存在，业务线尚未建立"}</strong><br>你暂无该客户的资料权限，系统仅展示查重所需的脱敏结果。</div>
-        <div class="glass-panel"><div class="identity-strip"><span class="avatar">远</span><span><strong>远航国际商旅****</strong><span><b class="match-reason">客户名称重复</b></span></span><span class="status-chip inactive">无权限</span></div></div>
+        <div class="glass-panel dedupe-name-comparison"><div class="dedupe-entered-name"><span>你输入的客户名</span><strong>${escapeHtml(state.customerName)}</strong></div><div class="dedupe-match-caption"><span>匹配到已有客户</span></div><div class="dedupe-system-match"><span class="dedupe-comparison-label">系统匹配客户</span><div class="identity-strip"><span class="avatar">远</span><span><strong>远航国际商旅****</strong><span><b class="match-reason">客户名称重复</b></span></span><span class="status-chip inactive">无权限</span></div></div></div>
         <div class="glass-panel dedupe-line-result"><div class="fact-row"><dt>本次选择</dt><dd>${escapeHtml(selectedLine)}</dd></div><div class="fact-row"><dt>业务线状态</dt><dd>${lineExists ? "已建立" : "尚未建立"}</dd></div></div>
         ${state.dedupeAccessRequested ? `<div class="notice success">申请已提交给客户负责人和业务管理员。</div>` : `<div class="notice">${lineExists ? `不能重复建立${escapeHtml(selectedLine)}业务线，请申请加入跟进。` : `无需重复创建客户，可申请为已有客户新增${escapeHtml(selectedLine)}业务线。`}</div>`}
         <div class="button-row"><button class="secondary-button" type="button" data-screen="customer-form">返回修改</button><button class="primary-button" type="button" data-action="request-restricted-access" ${state.dedupeAccessRequested ? "disabled" : ""}>${state.dedupeAccessRequested ? "已提交申请" : lineExists ? `申请加入${escapeHtml(selectedLine)}` : `申请新增${escapeHtml(selectedLine)}`}</button></div>`
@@ -679,6 +728,7 @@ function customerFormScreen() {
   return mobileFrame({
     title: createMode ? "新增客户" : "编辑客户", subtitle: "填写基本信息即可完成建档", back: "customers",
     body: `${state.customerFormError ? `<div class="notice danger">${escapeHtml(state.customerFormError)}</div>` : ""}
+      <button class="inline-ai-entry" type="button" data-action="prefill-customer-from-material"><span class="inline-ai-icon">AI</span><span><strong>从名片或材料识别客户信息</strong><small>识别后回填下方标准字段，由你确认后保存</small></span><span aria-hidden="true">›</span></button>
       <details class="form-section" open><summary>客户信息</summary><div class="form-body">
         <label class="field ${state.customerFormError ? "has-error" : ""}"><span>企业全称 <em>*</em></span><div class="field-action-row"><input id="customerName" maxlength="200" value="${escapeHtml(state.customerName)}"><button class="secondary-button field-action-button" type="button" data-action="check-customer-duplicate">查重</button></div>${state.customerDedupeStatus === "clear" ? `<small class="dedupe-success" data-dedupe-status>暂未发现近似客户，保存时将再次校验 <strong>✓</strong></small>` : ""}</label>
         <label class="field"><span>企业简称</span><input id="customerShortName" value="${escapeHtml(state.customerShortName)}" placeholder="选填，便于搜索和识别"></label>
@@ -702,26 +752,27 @@ function customerFormScreen() {
 
 function customerDetailScreen() {
   const tabs = [
-    ["overview", "概览"], ["contacts", "联系人"], ["timeline", "沟通记录"]
+    ["overview", "概览"], ["timeline", "沟通记录"], ["contacts", "联系人"], ["details", "详细信息"]
   ];
   const relations = state.customerBusinessRelations?.length ? state.customerBusinessRelations : [{
     line: state.customerBusinessLine, stage: state.customerRelation,
     owners: state.customerOwnerAssignments || [], contacts: state.customerContactName ? [state.customerContactName] : [],
     lastTime: "暂无沟通", lastChannel: "", lastSubject: "暂无沟通记录", lastSummary: ""
   }];
-  const selectedRelation = state.customerDetailBusinessLine === "all"
-    ? null
-    : relations.find((item) => item.line === state.customerDetailBusinessLine) || relations[0];
-  const visibleRelations = selectedRelation ? [selectedRelation] : relations;
-  const lineSummary = relations.map((item) => `<button class="business-line-summary" type="button" data-action="set-detail-business-line" data-value="${escapeHtml(item.line)}"><span><strong>${escapeHtml(item.line)}</strong><small>${item.owners.map((owner) => `${owner.role} ${owner.person || "待分配"}`).join(" · ")}</small></span><span class="status-chip ${["合作中", "已终止"].includes(item.stage) ? "formal" : "draft"}">${escapeHtml(item.stage)}</span></button>`).join("");
-  const recentRows = visibleRelations.map((item) => `<button class="recent-communication" type="button" data-action="set-customer-tab" data-tab="timeline"><span class="recent-communication-head"><strong>${escapeHtml(item.lastSubject)}</strong>${selectedRelation ? "" : `<span>${escapeHtml(item.line)}</span>`}</span><small>${escapeHtml([item.lastTime, item.lastChannel].filter(Boolean).join(" · "))}</small>${item.lastSummary ? `<p>${escapeHtml(item.lastSummary)}</p>` : ""}</button>`).join("");
-  const ownerRows = visibleRelations.map((item) => `<div class="line-owner-group">${selectedRelation ? "" : `<strong class="line-owner-title">${escapeHtml(item.line)}</strong>`}${item.owners.map((owner) => `<div class="system-item"><span class="avatar compact-avatar">${escapeHtml((owner.person || "待").slice(0, 1))}</span><span class="system-copy"><strong>${escapeHtml(owner.person || "待分配")}</strong><span>${escapeHtml(owner.role)}</span></span></div>`).join("")}</div>`).join("");
+  const relationLines = relations.map((item) => item.line);
+  const selectedLines = (state.customerSelectedBusinessLines || []).filter((line) => relationLines.includes(line));
+  const visibleRelations = relations.filter((item) => selectedLines.includes(item.line));
+  const relationRows = relations.map((item) => {
+    const checked = selectedLines.includes(item.line);
+    const ownerNames = item.owners.map((owner) => owner.person || "待分配").join("、");
+    return `<div class="customer-relation-row"><label class="relation-checkbox" title="筛选${escapeHtml(item.line)}相关内容"><input type="checkbox" data-action="toggle-customer-relation-filter" data-line="${escapeHtml(item.line)}" ${checked ? "checked" : ""}><span aria-hidden="true">${checked ? "✓" : ""}</span></label><button class="customer-relation-main" type="button" data-action="open-customer-relation-detail" data-line="${escapeHtml(item.line)}"><span><strong>${escapeHtml(item.line)}</strong><small>${escapeHtml(ownerNames)}</small></span><span class="relation-row-end"><b class="status-chip ${["合作中", "已终止"].includes(item.stage) ? "formal" : "draft"}">${escapeHtml(item.stage)}</b><i aria-hidden="true">›</i></span></button></div>`;
+  }).join("");
   const contactNames = [...new Set(visibleRelations.flatMap((item) => item.contacts || []))];
   const contacts = contactNames.length ? contactNames.map((name) => {
-    const relatedLines = relations.filter((item) => item.contacts?.includes(name)).map((item) => item.line);
+    const relatedLines = visibleRelations.filter((item) => item.contacts?.includes(name)).map((item) => item.line);
     const knownPrimary = name === state.customerContactName;
     return `<div class="customer-card compact-contact"><span class="avatar">${escapeHtml(name.slice(0, 1))}</span><span class="customer-copy"><strong>${escapeHtml(name)}${knownPrimary ? ` <small>主要联系人</small>` : ""}</strong><span>${escapeHtml(knownPrimary ? [state.customerContactDepartment, state.customerContactTitle].filter(Boolean).join(" · ") || "职位待补充" : "联系人")}<br>${escapeHtml(knownPrimary ? state.customerContactMobile || "联系方式待补充" : "联系方式待补充")}<br>关联业务线：${escapeHtml(relatedLines.join("、"))}</span></span></div>`;
-  }).join("") : `<div class="notice">当前业务线暂未关联联系人。</div>`;
+  }).join("") : `<div class="customer-filter-empty"><strong>暂无关联联系人</strong><span>可从业务关系详情中补充联系人。</span></div>`;
   const addresses = state.customerAddresses?.length ? state.customerAddresses : [{ country: state.customerCountry, province: state.customerProvince, city: state.customerCity, detail: state.customerDetailAddress }];
   const addressRows = addresses.map((address, index) => `<div class="fact-row"><dt>地址 ${index + 1}${state.customerPrimaryAddressIndex === index ? " · 主地址" : ""}</dt><dd>${escapeHtml([address.country, address.province, address.city, address.detail].filter(Boolean).join(" ") || "待补充")}</dd></div>`).join("");
   const primaryAddress = addresses[state.customerPrimaryAddressIndex] || addresses[0];
@@ -732,22 +783,53 @@ function customerDetailScreen() {
     primaryAddressText ? `<div class="fact-row"><dt>主地址</dt><dd>${escapeHtml(primaryAddressText)}</dd></div>` : "",
     state.customerParentName ? `<div class="fact-row"><dt>上级客户</dt><dd>${escapeHtml(state.customerParentName)}</dd></div>` : ""
   ].join("");
-  const customerInfo = `<div class="glass-panel"><div class="section-heading"><h3>客户信息</h3></div><dl class="fact-list">${customerSummaryRows}</dl><details class="inline-details"><summary>企业详细信息</summary><dl class="fact-list"><div class="fact-row"><dt>企业简称</dt><dd>${escapeHtml(state.customerShortName || state.customerName.replace(/有限公司$/, ""))}</dd></div><div class="fact-row"><dt>客户编码</dt><dd>C-20260821017</dd></div><div class="fact-row"><dt>信用代码</dt><dd>${escapeHtml(state.customerUscc || "待补充")}</dd></div>${addressRows}${state.customerRemark ? `<div class="fact-row"><dt>备注</dt><dd>${escapeHtml(state.customerRemark)}</dd></div>` : ""}</dl></details></div>`;
+  const customerInfo = `<div class="customer-details-panel"><dl class="fact-list"><div class="fact-row"><dt>企业全称</dt><dd>${escapeHtml(state.customerName)}</dd></div><div class="fact-row"><dt>企业简称</dt><dd>${escapeHtml(state.customerShortName || state.customerName.replace(/有限公司$/, ""))}</dd></div><div class="fact-row"><dt>客户编码</dt><dd>C-20260821017</dd></div>${customerSummaryRows}<div class="fact-row"><dt>企业性质</dt><dd>${escapeHtml(state.customerNature || "待补充")}</dd></div><div class="fact-row"><dt>企业电话</dt><dd>${escapeHtml(state.customerMainPhone || "待补充")}</dd></div><div class="fact-row"><dt>企业邮箱</dt><dd>${escapeHtml(state.customerPublicEmail || "待补充")}</dd></div><div class="fact-row"><dt>信用代码</dt><dd>${escapeHtml(state.customerUscc || "待补充")}</dd></div>${addressRows}</dl></div>`;
   const customerTimelineRecords = getFormalRecords().filter((row) => sameCustomer(row.customer, state.customerName)
-    && (!selectedRelation || recordBusinessLines(row).includes(selectedRelation.line)));
+    && recordBusinessLines(row).some((line) => selectedLines.includes(line)));
   const customerTimeline = customerTimelineRecords.length
     ? customerTimelineRecords.map((row) => `<button class="timeline-item customer-timeline-record" type="button" data-action="select-record" data-customer="${escapeHtml(row.customer)}" data-time="${escapeHtml(row.displayTime)}" data-channel="${escapeHtml(row.channel)}" data-business-line="${escapeHtml(recordBusinessLines(row)[0] || "")}" data-business-lines="${escapeHtml(recordBusinessLines(row).join("|"))}" data-subject="${escapeHtml(row.subject)}"><strong>${escapeHtml(row.subject)}</strong><span>${escapeHtml(row.displayTime)} · ${escapeHtml(row.channel)} · ${escapeHtml(businessLineLabel(row))}</span><p>${escapeHtml(row.summary)}</p></button>`).join("")
-    : `<div class="follow-up-empty"><strong>暂无正式沟通记录</strong><span>草稿和待处理不会出现在客户时间线中。</span></div>`;
+    : `<div class="customer-filter-empty"><strong>暂无沟通记录</strong><span>当前所选业务线还没有正式沟通记录。</span></div>`;
+  const customerSchedules = getSchedules().filter((item) => sameCustomer(item.customer, state.customerName)
+    && (item.businessLines || []).some((line) => selectedLines.includes(line)));
+  const scheduleRows = customerSchedules.slice(0, 2).map((item) => {
+    const status = scheduleStatus(item);
+    const scheduleId = item.id || `${item.date}-${item.time}-${item.title}`;
+    return `<button class="customer-schedule-row ${status.key}" type="button" data-action="open-customer-schedule" data-schedule-id="${escapeHtml(scheduleId)}"><time>${escapeHtml(formatFollowUpDate(item.date))}<strong>${escapeHtml(scheduleTimeLabel(item))}</strong></time><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml((item.businessLines || []).join(" / "))} · ${escapeHtml(item.channel)}</small><b class="schedule-state ${status.key}">${escapeHtml(status.label)}</b></span><i aria-hidden="true">›</i></button>`;
+  }).join("");
+  const recentRows = customerTimelineRecords.slice(0, 2).map((row) => `<button class="recent-communication" type="button" data-action="select-record" data-customer="${escapeHtml(row.customer)}" data-time="${escapeHtml(row.displayTime)}" data-channel="${escapeHtml(row.channel)}" data-business-line="${escapeHtml(recordBusinessLines(row)[0] || "")}" data-business-lines="${escapeHtml(recordBusinessLines(row).join("|"))}" data-subject="${escapeHtml(row.subject)}"><span class="recent-communication-head"><strong>${escapeHtml(row.subject)}</strong></span><small>${escapeHtml(row.displayTime)} · ${escapeHtml(row.channel)} · ${escapeHtml(businessLineLabel(row))}</small><p>${escapeHtml(row.summary)}</p></button>`).join("");
+  const scopedEmpty = `<div class="customer-filter-empty"><strong>请选择业务线查看相关内容</strong><span>上方复选框只控制下方业务数据，不影响客户公共资料。</span></div>`;
+  const scopedContent = {
+    overview: `<section class="customer-overview-section"><div class="section-heading"><h3>日程安排</h3><button class="text-button" type="button" data-action="open-customer-schedule-create">+ 新增日程</button></div>${scheduleRows || `<div class="customer-filter-empty compact"><span>暂无相关日程</span></div>`}</section><section class="customer-overview-section"><div class="section-heading"><h3>最近沟通</h3><button class="text-button" type="button" data-action="set-customer-tab" data-tab="timeline">查看全部 ›</button></div>${recentRows || `<div class="customer-filter-empty compact"><span>暂无相关沟通记录</span></div>`}</section>`,
+    timeline: `<div class="section-heading page-section-heading"><h3>沟通记录</h3><span>时间倒序 · ${customerTimelineRecords.length} 条</span></div><div class="customer-timeline-panel"><div class="timeline customer-record-timeline">${customerTimeline}</div></div>`,
+    contacts: `<div class="section-heading page-section-heading"><h3>联系人</h3><span>${contactNames.length} 人</span></div><div class="list-panel">${contacts}</div><button class="secondary-button full-button" type="button" data-action="add-detail-subobject" data-kind="contact">新增联系人</button>`
+  };
+  const relationDetail = relations.find((item) => item.line === state.customerRelationDetailLine);
+  const relationLatestRecord = relationDetail ? getFormalRecords().find((item) => sameCustomer(item.customer, state.customerName) && recordBusinessLines(item).includes(relationDetail.line)) : null;
+  const relationSchedule = relationDetail ? getSchedules().find((item) => sameCustomer(item.customer, state.customerName)
+    && (item.businessLines || []).includes(relationDetail.line)
+    && `${item.date} ${item.time}` >= `${PROTOTYPE_TODAY} 17:00`) : null;
+  const relationLayer = relationDetail ? `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="relationDetailTitle"><button class="records-sheet-scrim" type="button" data-action="close-customer-relation-detail" aria-label="关闭业务关系详情"></button><section class="records-sheet customer-relation-sheet"><header><strong id="relationDetailTitle">${escapeHtml(relationDetail.line)}业务关系</strong><button type="button" data-action="close-customer-relation-detail" aria-label="关闭">×</button></header><div class="relation-stage-flow">${["潜在", "跟进中", "合作中"].map((stage) => `<span class="${relationDetail.stage === stage ? "active" : ""}">${stage}</span>`).join("")}${relationDetail.stage === "已终止" ? `<span class="ended active">已终止</span>` : ""}</div><dl class="fact-list"><div class="fact-row"><dt>负责人</dt><dd>${escapeHtml(relationDetail.owners.map((owner) => `${owner.role} ${owner.person || "待分配"}`).join("、"))}</dd></div><div class="fact-row"><dt>联系人</dt><dd>${escapeHtml((relationDetail.contacts || []).join("、") || "待补充")}</dd></div><div class="fact-row"><dt>最近沟通</dt><dd>${relationLatestRecord ? `${escapeHtml(relationLatestRecord.subject)}<small>${escapeHtml([relationLatestRecord.displayTime, relationLatestRecord.channel].filter(Boolean).join(" · "))}</small>` : "暂无沟通记录"}</dd></div><div class="fact-row"><dt>下次日程</dt><dd>${relationSchedule ? `${escapeHtml(formatFollowUpDate(relationSchedule.date))} ${escapeHtml(scheduleTimeLabel(relationSchedule))}<small>${escapeHtml(relationSchedule.title)}</small>` : "暂无安排"}</dd></div></dl><div class="button-row equal relation-sheet-actions"><button class="secondary-button" type="button" data-action="open-customer-line-schedule" data-line="${escapeHtml(relationDetail.line)}">新增日程</button><button class="primary-button" type="button" data-action="start-customer-relation-record" data-line="${escapeHtml(relationDetail.line)}">新增沟通记录</button></div></section></div>` : "";
   const content = {
-    overview: `${selectedRelation ? "" : `<div class="glass-panel"><div class="section-heading"><h3>业务线状态</h3><button class="text-button" type="button" data-action="add-customer-business-line">+ 新增业务线</button></div><div class="business-line-list">${lineSummary}</div></div>`}<div class="glass-panel"><div class="section-heading"><h3>最近沟通</h3><button class="text-button" type="button" data-action="set-customer-tab" data-tab="timeline">查看全部 ›</button></div>${recentRows}</div><div class="glass-panel"><div class="section-heading"><h3>跟进负责人</h3><button class="text-button" type="button" data-action="edit-customer">管理 ›</button></div>${ownerRows}</div><div class="glass-panel"><div class="section-heading"><h3>主要联系人</h3><button class="text-button" type="button" data-action="set-customer-tab" data-tab="contacts">查看全部 ›</button></div>${contacts}</div>${customerInfo}`,
-    contacts: `<div class="section-heading page-section-heading"><h3>${selectedRelation ? `${escapeHtml(selectedRelation.line)}联系人` : "全部联系人"}</h3><span>${contactNames.length} 人</span></div><div class="list-panel">${contacts}</div><button class="secondary-button full-button" type="button" data-action="add-detail-subobject" data-kind="contact">新增联系人</button>`,
-    timeline: `<div class="section-heading page-section-heading"><h3>${selectedRelation ? `${escapeHtml(selectedRelation.line)}沟通记录` : "全部业务线沟通记录"}</h3><span>正式沟通 · 时间倒序</span></div><div class="glass-panel"><div class="timeline customer-record-timeline">${customerTimeline}</div></div>`
+    overview: selectedLines.length ? scopedContent.overview : scopedEmpty,
+    timeline: selectedLines.length ? scopedContent.timeline : scopedEmpty,
+    contacts: selectedLines.length ? scopedContent.contacts : scopedEmpty,
+    details: customerInfo
   }[state.customerTab];
   return mobileFrame({
     title: state.customerName, back: "customers",
-    body: `<div class="glass-panel customer-detail-context"><div class="detail-line-heading"><strong>业务线视图</strong>${selectedRelation ? `<span class="status-chip draft">${escapeHtml(selectedRelation.stage)}</span>` : `<span>${relations.length} 条业务线</span>`}</div><div class="detail-line-tabs"><button class="${state.customerDetailBusinessLine === "all" ? "active" : ""}" type="button" data-action="set-detail-business-line" data-value="all">全部</button>${relations.map((item) => `<button class="${state.customerDetailBusinessLine === item.line ? "active" : ""}" type="button" data-action="set-detail-business-line" data-value="${escapeHtml(item.line)}">${escapeHtml(item.line)}</button>`).join("")}</div><div class="button-row equal"><button class="secondary-button" type="button" data-action="edit-customer">编辑资料</button><button class="primary-button" type="button" data-action="start-line-record">+ 新增沟通记录</button></div></div>
-      <div class="tab-row">${tabs.map(([id, label]) => `<button class="tab-button ${state.customerTab === id ? "active" : ""}" type="button" data-action="set-customer-tab" data-tab="${id}">${label}</button>`).join("")}</div>${content}`
+    body: `<section class="customer-detail-identity"><span>${escapeHtml([state.customerShortName, state.customerIndustry].filter(Boolean).join(" · "))}</span><div class="button-row equal"><button class="secondary-button" type="button" data-action="edit-customer">编辑资料</button><button class="primary-button" type="button" data-action="start-line-record">新增沟通记录</button></div></section><section class="customer-relations-panel"><div class="section-heading"><div><h3>业务关系</h3><span>${selectedLines.length}/${relations.length} 条已选</span></div><button class="text-button" type="button" data-action="add-customer-business-line">+ 新增</button></div><div class="customer-relation-list">${relationRows}</div></section>
+      <div class="tab-row customer-detail-tabs">${tabs.map(([id, label]) => `<button class="tab-button ${state.customerTab === id ? "active" : ""}" type="button" data-action="set-customer-tab" data-tab="${id}">${label}</button>`).join("")}</div><div class="customer-detail-tab-content">${content}</div>${relationLayer}`
   });
+}
+
+function recordCustomerPickerLayer() {
+  if (!state.customerPickerOpen) return "";
+  const rows = RECORD_CUSTOMER_OPTIONS.map((customer) => {
+    const selected = customer.name === state.customerName;
+    const searchText = `${customer.name} ${customer.contact} ${customer.mobile}`;
+    return `<button class="record-customer-option ${selected ? "selected" : ""}" type="button" data-action="choose-record-customer" data-customer="${escapeHtml(customer.name)}" data-record-customer-option data-search-text="${escapeHtml(searchText)}" aria-pressed="${selected}"><span class="record-customer-avatar">${escapeHtml(customer.name.slice(0, 1))}</span><span class="record-customer-copy"><strong>${escapeHtml(customer.name)}</strong><small>${escapeHtml(customer.contact)}</small></span><span class="record-customer-option-state">${selected ? "已选" : "›"}</span></button>`;
+  }).join("");
+  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="recordCustomerPickerTitle"><button class="records-sheet-scrim" type="button" data-action="close-record-customer-picker" aria-label="关闭客户选择"></button><section class="records-sheet record-customer-picker-sheet"><header><strong id="recordCustomerPickerTitle">更换客户</strong><button type="button" data-action="close-record-customer-picker" aria-label="关闭">×</button></header><label class="record-customer-search" for="recordCustomerSearch"><span class="visually-hidden">搜索客户</span><input id="recordCustomerSearch" type="search" value="${escapeHtml(state.recordCustomerSearch)}" placeholder="搜索客户、联系人或手机号" autocomplete="off"></label><div class="record-customer-list">${rows}</div><div class="record-customer-empty" data-record-customer-empty hidden><strong>未找到客户</strong><span>请检查客户名、联系人或手机号</span></div></section></div>`;
 }
 
 function legacyManualRecordScreen() {
@@ -755,7 +837,7 @@ function legacyManualRecordScreen() {
     title: "新增沟通记录", back: state.manualRecordBack || "records",
     body: `<div class="mobile-segmented"><button class="segment-button active" type="button">手工录入</button><button class="segment-button" type="button" data-screen="ai-material">AI 整理材料</button></div>
       ${Object.values(state.manualErrors).length ? `<div class="notice danger">请修正标记的正式必填字段。</div>` : ""}
-      <div class="glass-panel manual-record-form"><div class="identity-strip"><span class="avatar">${escapeHtml(state.customerName.slice(0, 1))}</span><span><strong>${escapeHtml(state.customerName)}</strong></span><button class="text-button" type="button" data-action="change-customer">更换 ›</button></div>${state.customerPickerOpen ? `<div class="customer-picker"><button type="button" data-action="choose-record-customer" data-customer="华东智造科技">华东智造科技</button><button type="button" data-action="choose-record-customer" data-customer="远见数字供应链">远见数字供应链</button></div>` : ""}
+      <div class="glass-panel manual-record-form"><div class="identity-strip"><span class="avatar">${escapeHtml(state.customerName.slice(0, 1))}</span><span><strong>${escapeHtml(state.customerName)}</strong></span><button class="text-button" type="button" data-action="change-customer">更换 ›</button></div>
         <label class="field ${state.manualErrors.businessLine ? "has-error" : ""}"><span>业务线 <em>*</em></span><select id="manualBusinessLine"><option value="">请选择业务线</option>${BUSINESS_LINES.map((line) => `<option ${state.manualBusinessLine === line ? "selected" : ""}>${line}</option>`).join("")}</select>${state.manualErrors.businessLine ? `<small class="field-error">${escapeHtml(state.manualErrors.businessLine)}</small>` : ""}</label>
         <label class="field ${state.manualErrors.channel ? "has-error" : ""}"><span>沟通方式 <em>*</em></span><select id="manualChannel"><option value="">请选择</option><option ${state.manualChannel === "电话" ? "selected" : ""}>电话</option><option ${state.manualChannel === "线下拜访" ? "selected" : ""}>线下拜访</option><option ${state.manualChannel === "线上会议" ? "selected" : ""}>线上会议</option></select>${state.manualErrors.channel ? `<small class="field-error">${escapeHtml(state.manualErrors.channel)}</small>` : ""}</label>
         <div class="field-grid"><label class="field ${state.manualErrors.time ? "has-error" : ""}"><span>开始时间 <em>*</em></span><input id="manualTime" value="${escapeHtml(state.manualTime)}">${state.manualErrors.time ? `<small class="field-error">${escapeHtml(state.manualErrors.time)}</small>` : ""}</label><label class="field ${state.manualErrors.endTime ? "has-error" : ""}"><span>结束时间（选填）</span><input id="manualEndTime" value="${escapeHtml(state.manualEndTime)}">${state.manualErrors.endTime ? `<small class="field-error">${escapeHtml(state.manualErrors.endTime)}</small>` : ""}</label></div>
@@ -768,9 +850,38 @@ function legacyManualRecordScreen() {
         <button class="secondary-button full-button" type="button" data-action="toggle-manual-next-action">${state.manualNextActionOpen ? "收起下一步行动" : "+ 添加下一步行动"}</button>
         ${state.manualNextActionOpen ? `<div class="manual-next-action"><label class="field"><span>行动类型</span><select id="manualNextActionType"><option ${state.manualNextActionType === "待处理" ? "selected" : ""}>待处理</option><option ${state.manualNextActionType === "日程" ? "selected" : ""}>日程</option></select></label><label class="field"><span>行动内容</span><input id="manualNextActionTitle" maxlength="100" value="${escapeHtml(state.manualNextActionTitle)}" placeholder="请输入下一步行动"></label><label class="field"><span>计划时间${state.manualNextActionType === "日程" ? " *" : "（选填）"}</span><input id="manualNextActionTime" value="${escapeHtml(state.manualNextActionTime)}" placeholder="YYYY-MM-DD HH:mm"></label>${state.manualErrors.nextActionTime ? `<small class="field-error">${escapeHtml(state.manualErrors.nextActionTime)}</small>` : ""}<small class="field-hint">正式保存后同步到工作台。</small></div>` : ""}
         <label class="upload-zone compact-upload" for="manualAttachment"><input class="file-input" id="manualAttachment" type="file" accept=".pdf,.docx,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.m4a,.mp3,.wav"><span><strong>${state.attachmentAdded ? "附件已选择，可重新选择" : "+ 添加附件"}</strong><span>单文件 50 MB，最多 10 个</span></span></label>
-      </div>`,
+      </div>${recordCustomerPickerLayer()}`,
     sticky: `<div class="screen-actions"><div class="button-row"><button class="secondary-button" type="button" data-action="save-manual-draft">保存草稿</button><button class="primary-button" type="button" data-action="save-manual-formal"><span class="confirm-dot"></span>保存正式记录</button></div></div>`
   });
+}
+
+function hydrateManualFromAiDraft() {
+  if (state.aiManualHydrated) return;
+  const line = state.aiDraft.businessLine || "商旅";
+  state.customerName = state.aiDraft.customer;
+  state.manualTime = state.aiDraft.time;
+  state.manualEndTime = state.aiDraft.endTime || "";
+  state.manualChannel = state.aiDraft.channel;
+  state.manualBusinessLine = line;
+  state.manualBusinessLines = [line];
+  state.manualTopics = {
+    [line]: {
+      subject: state.aiDraft.subject,
+      keyPoints: state.aiDraft.content,
+      result: state.aiDraft.conclusion
+    }
+  };
+  state.manualSubject = state.aiDraft.subject;
+  state.manualErrors = {};
+  state.attachmentAdded = state.aiAttachmentAdded;
+  state.aiManualHydrated = true;
+}
+
+function aiManualReviewScreen() {
+  hydrateManualFromAiDraft();
+  state.communicationEntryMode = "ai";
+  state.manualRecordBack = "ai-processing";
+  return manualRecordScreen();
 }
 
 function manualRecordScreen() {
@@ -781,9 +892,9 @@ function manualRecordScreen() {
   }).join("");
   return mobileFrame({
     title: "新增沟通记录", back: state.manualRecordBack || "records",
-    body: `<div class="mobile-segmented"><button class="segment-button" type="button" data-screen="ai-material">AI 整理</button><button class="segment-button active" type="button">手工填写</button></div>
+    body: `${state.communicationEntryMode === "ai" ? `<div class="notice warning ai-prefill-notice"><strong>AI 已完成预填</strong><br>请核对客户、时间及各业务线议题，保存后才进入正式记录。</div>` : `<button class="inline-ai-entry" type="button" data-screen="ai-material"><span class="inline-ai-icon">AI</span><span><strong>导入录音、纪要或文件</strong><small>AI 整理后仍回到这套标准字段确认</small></span><span aria-hidden="true">›</span></button>`}
       ${Object.values(state.manualErrors).length ? `<div class="notice danger">请修正标记的正式必填字段。</div>` : ""}
-      <div class="glass-panel manual-record-form"><div class="identity-strip"><span class="avatar">${escapeHtml(state.customerName.slice(0, 1))}</span><span><strong>${escapeHtml(state.customerName)}</strong></span><button class="text-button" type="button" data-action="change-customer">更换 ›</button></div>${state.customerPickerOpen ? `<div class="customer-picker"><button type="button" data-action="choose-record-customer" data-customer="华东智造科技">华东智造科技</button><button type="button" data-action="choose-record-customer" data-customer="远见数字供应链">远见数字供应链</button></div>` : ""}
+      <div class="glass-panel manual-record-form"><div class="identity-strip"><span class="avatar">${escapeHtml(state.customerName.slice(0, 1))}</span><span><strong>${escapeHtml(state.customerName)}</strong></span><button class="text-button" type="button" data-action="change-customer">更换 ›</button></div>
         <fieldset class="schedule-business-line-field ${state.manualErrors.businessLine ? "has-error" : ""}"><legend>涉及业务线 *</legend><div>${BUSINESS_LINES.map((line) => `<label class="schedule-line-option"><input name="manualBusinessLine" type="checkbox" value="${line}" ${selectedLines.includes(line) ? "checked" : ""}><span>${line}</span></label>`).join("")}</div><small>可多选；选择多条后分别填写议题</small>${state.manualErrors.businessLine ? `<small class="field-error">${escapeHtml(state.manualErrors.businessLine)}</small>` : ""}</fieldset>
         <div class="choice-field ${state.manualErrors.channel ? "has-error" : ""}"><span>沟通渠道 <em>*</em></span><input id="manualChannel" type="hidden" value="${escapeHtml(state.manualChannel)}"><div class="choice-row compact">${["微信", "手机", "线下拜访"].map((channel) => `<button class="choice-button ${state.manualChannel === channel ? "active" : ""}" type="button" data-action="set-manual-channel" data-value="${channel}">${channel}</button>`).join("")}</div>${state.manualErrors.channel ? `<small class="field-error">${escapeHtml(state.manualErrors.channel)}</small>` : ""}</div>
         <div class="field-grid"><label class="field ${state.manualErrors.time ? "has-error" : ""}"><span>开始时间 <em>*</em></span><input id="manualTime" value="${escapeHtml(state.manualTime)}">${state.manualErrors.time ? `<small class="field-error">${escapeHtml(state.manualErrors.time)}</small>` : ""}</label><label class="field ${state.manualErrors.endTime ? "has-error" : ""}"><span>结束时间（选填）</span><input id="manualEndTime" value="${escapeHtml(state.manualEndTime)}">${state.manualErrors.endTime ? `<small class="field-error">${escapeHtml(state.manualErrors.endTime)}</small>` : ""}</label></div>
@@ -792,14 +903,20 @@ function manualRecordScreen() {
         ${selectedLines.length > 1 ? `<label class="field"><span>记录标题 <em>*</em></span><input id="manualSubject" maxlength="300" value="${escapeHtml(state.manualSubject)}" placeholder="概括本次多业务线沟通"></label>` : `<input id="manualSubject" type="hidden" value="${escapeHtml(state.manualTopics[selectedLines[0]]?.subject || state.manualSubject)}">`}
         <div class="communication-topics">${topicSections || `<div class="notice">请先选择至少一条业务线。</div>`}</div>
         <label class="upload-zone compact-upload" for="manualAttachment"><input class="file-input" id="manualAttachment" type="file" accept=".pdf,.docx,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.m4a,.mp3,.wav"><span><strong>${state.attachmentAdded ? "材料已选择，可重新选择" : "+ 添加沟通材料或附件"}</strong><span>会议纪要、转写文本、音频或业务附件</span></span></label>
-      </div>${draftExitDialog("record")}`,
+      </div>${recordCustomerPickerLayer()}${draftExitDialog("record")}`,
     sticky: `<div class="screen-actions"><button class="primary-button full-button" type="button" data-action="save-manual-formal"><span class="confirm-dot"></span>保存正式记录</button></div>`
   });
 }
 
 function draftExitDialog(kind) {
   if (state.draftExitPrompt !== kind) return "";
-  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="draftExitTitle"><button class="records-sheet-scrim" type="button" data-action="continue-form-edit" aria-label="继续编辑"></button><section class="records-sheet draft-exit-sheet"><header><strong id="draftExitTitle">是否保存本次草稿？</strong></header><p>保存后可在“我的”中继续编辑。</p><div class="draft-exit-actions"><button class="text-button" type="button" data-action="discard-form-exit">不保存</button><button class="secondary-button" type="button" data-action="continue-form-edit">继续编辑</button><button class="primary-button" type="button" data-action="save-form-draft-exit">保存草稿</button></div></section></div>`;
+  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="draftExitTitle"><button class="records-sheet-scrim" type="button" data-action="continue-form-edit" aria-label="继续编辑"></button><section class="records-sheet draft-exit-sheet"><header><strong id="draftExitTitle">是否保存本次草稿？</strong></header><p>保存后可在${kind === "customer" ? "客户" : "跟进记录"}中继续编辑。</p><div class="draft-exit-actions"><button class="text-button" type="button" data-action="discard-form-exit">不保存</button><button class="secondary-button" type="button" data-action="continue-form-edit">继续编辑</button><button class="primary-button" type="button" data-action="save-form-draft-exit">保存草稿</button></div></section></div>`;
+}
+
+function moduleDraftListLayer(kind) {
+  if (kind !== "communication" || state.moduleDraftListOpen !== kind) return "";
+  const communicationDrafts = `<button class="module-draft-row" type="button" data-action="continue-communication-draft" data-draft-id="annual-meeting"><span><strong>年度会议需求沟通</strong><small>远见数字供应链 · 会奖服务</small></span><time>今天 11:20</time></button><button class="module-draft-row" type="button" data-action="continue-communication-draft" data-draft-id="vehicle-plan"><span><strong>企业用车方案补充</strong><small>华东智造科技 · 企业用车</small></span><time>昨天 17:45</time></button>`;
+  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="moduleDraftTitle"><button class="records-sheet-scrim" type="button" data-action="close-module-drafts" aria-label="关闭草稿列表"></button><section class="records-sheet module-draft-sheet"><header><strong id="moduleDraftTitle">沟通记录草稿</strong><button type="button" data-action="close-module-drafts" aria-label="关闭">×</button></header><div class="module-draft-list">${communicationDrafts}</div></section></div>`;
 }
 
 function recordsScreen() {
@@ -815,23 +932,22 @@ function recordsScreen() {
   const weekButtons = FOLLOW_UP_WEEK.map((day) => {
     const hasSchedule = schedules.some((item) => item.date === day.date);
     const hasCommunication = recordRows.some((item) => item.date === day.date);
-    return `<button class="follow-up-day ${state.followUpSelectedDate === day.date ? "selected" : ""}" type="button" data-action="set-follow-up-date" data-date="${day.date}" aria-pressed="${state.followUpSelectedDate === day.date}"><span>${day.weekday}</span><strong>${day.day}</strong><i class="follow-up-markers" aria-hidden="true">${hasSchedule ? `<b class="schedule-marker"></b>` : ""}${hasCommunication ? `<b class="communication-marker"></b>` : ""}</i></button>`;
+    const selected = state.recordsCalendarMode === "day" && state.followUpSelectedDate === day.date;
+    return `<button class="follow-up-day ${selected ? "selected" : ""}" type="button" data-action="set-follow-up-date" data-date="${day.date}" aria-pressed="${selected}"><span>${day.weekday}</span><strong>${day.day}</strong><i class="follow-up-markers" aria-hidden="true">${hasSchedule ? `<b class="schedule-marker"></b>` : ""}${hasCommunication ? `<b class="communication-marker"></b>` : ""}</i></button>`;
   }).join("");
   const scheduleRows = selectedSchedules.map((item) => followUpScheduleRow(item)).join("");
   const communicationRows = selectedRecords.map((item) => followUpCommunicationRow(item)).join("");
-  const visibleCount = (state.recordsShowSchedules ? selectedSchedules.length : 0) + (state.recordsShowCommunications ? selectedRecords.length : 0);
-  const periodSummary = state.recordsCalendarMode === "list"
-    ? `全部记录 · ${schedules.length} 个日程和 ${recordRows.length} 条沟通记录`
-    : `${dateLabel} · ${selectedSchedules.length} 个日程和 ${selectedRecords.length} 条沟通记录`;
   const dayContent = `${state.recordsShowSchedules ? `<section class="follow-up-section-card schedule-card"><div class="follow-up-content-heading"><strong>日程安排</strong><span>${selectedSchedules.length} 条</span></div>${scheduleRows || `<div class="follow-up-empty compact"><span>当日暂无日程安排</span></div>`}</section>` : ""}${state.recordsShowCommunications ? `<section class="follow-up-section-card communication-card"><div class="follow-up-content-heading"><strong>沟通记录</strong><span>${selectedRecords.length ? `${selectedRecords.length} 条` : "当日暂无"}</span></div>${communicationRows || `<div class="follow-up-empty compact"><span>当日暂无已发生的沟通记录</span></div>`}</section>` : ""}`;
   const calendar = `<section class="follow-up-week"><div class="follow-up-week-days">${weekButtons}</div></section>`;
+  const viewAction = state.recordsCalendarMode === "list"
+    ? `<button class="records-view-action" type="button" data-action="show-dated-follow-ups">按日期查看</button>`
+    : `<button class="records-view-action" type="button" data-action="show-all-follow-ups">查看全部 ›</button>`;
   return mobileFrame({
     title: "跟进记录", nav: "records",
+    titleAction: `<button class="header-text-action draft-count-action" type="button" data-action="open-module-drafts" data-draft-kind="communication" aria-expanded="${state.moduleDraftListOpen === "communication"}">2 条沟通记录草稿</button>`,
     action: `<button class="mobile-icon-button" type="button" data-action="toggle-record-create-menu" title="新增" aria-label="新增日程或沟通记录" aria-expanded="${state.recordsCreateMenuOpen || state.scheduleComposerOpen}">+</button>`,
-    body: `<p class="records-period-summary">${periodSummary}</p>
-      <div class="records-type-filters" aria-label="内容类型"><button class="${state.recordsShowSchedules ? "active" : ""}" type="button" data-action="toggle-record-type" data-type="schedule" aria-pressed="${state.recordsShowSchedules}"><span>${state.recordsShowSchedules ? "✓" : ""}</span>日程安排</button><button class="${state.recordsShowCommunications ? "active" : ""}" type="button" data-action="toggle-record-type" data-type="communication" aria-pressed="${state.recordsShowCommunications}"><span>${state.recordsShowCommunications ? "✓" : ""}</span>沟通记录</button></div>
-      <div class="records-calendar-controls"><div class="records-date-nav"><button type="button" data-action="shift-follow-up-days" data-direction="previous" title="上一段日期" aria-label="上一段日期">‹</button><button type="button" data-action="go-follow-up-today">今天</button><button type="button" data-action="shift-follow-up-days" data-direction="next" title="下一段日期" aria-label="下一段日期">›</button></div><div class="records-view-tabs" role="tablist" aria-label="跟进记录视图">${[["day", "单日"], ["list", "列表"]].map(([mode, label]) => `<button class="${state.recordsCalendarMode === mode ? "active" : ""}" type="button" data-action="set-record-calendar-mode" data-mode="${mode}" role="tab" aria-selected="${state.recordsCalendarMode === mode}">${label}</button>`).join("")}</div></div>
-      ${state.recordsCalendarMode === "list" ? followUpListView(schedules, recordRows) : `${calendar}<section class="follow-up-day-block"><div class="follow-up-day-heading"><strong>${dateLabel}</strong><span>${visibleCount} 项</span></div><div class="follow-up-day-content">${dayContent}</div></section>`}${recordsCreateLayer()}${scheduleDetailLayer(schedules)}${followUpListFilterLayer(schedules, recordRows)}`
+    body: `${calendar}<div class="records-content-controls"><div class="records-type-filters" aria-label="内容类型"><button class="${state.recordsShowSchedules ? "active" : ""}" type="button" data-action="toggle-record-type" data-type="schedule" aria-pressed="${state.recordsShowSchedules}"><span>${state.recordsShowSchedules ? "✓" : ""}</span>日程安排</button><button class="${state.recordsShowCommunications ? "active" : ""}" type="button" data-action="toggle-record-type" data-type="communication" aria-pressed="${state.recordsShowCommunications}"><span>${state.recordsShowCommunications ? "✓" : ""}</span>沟通记录</button></div>${viewAction}</div>
+      ${state.recordsCalendarMode === "list" ? followUpListView(schedules, recordRows) : `<section class="follow-up-day-block"><div class="follow-up-day-heading"><strong>${dateLabel}</strong></div><div class="follow-up-day-content">${dayContent}</div></section>`}${recordsCreateLayer()}${scheduleDetailLayer(schedules)}${followUpListFilterLayer(schedules, recordRows)}${moduleDraftListLayer("communication")}`
   });
 }
 
@@ -852,7 +968,9 @@ function scheduleMeta(item) {
 
 function followUpScheduleRow(item, showDate = false) {
   const timeLabel = showDate ? `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8))}` : scheduleTimeLabel(item);
-  return `<button class="follow-up-event-row schedule-row-card" type="button" data-action="open-schedule-preview" data-schedule-id="${escapeHtml(item.id || `${item.date}-${item.time}-${item.title}`)}"><time datetime="${item.date}T${item.time}">${escapeHtml(timeLabel)}</time><span class="follow-up-event-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(scheduleMeta(item))}</small>${showDate && item.endTime ? `<small class="schedule-list-time">${escapeHtml(item.time)}-${escapeHtml(item.endTime)}</small>` : ""}</span><span class="item-action">›</span></button>`;
+  const scheduleId = item.id || `${item.date}-${item.time}-${item.title}`;
+  const status = scheduleStatus(item);
+  return `<div class="schedule-swipe-row ${status.key} ${state.openScheduleSwipeId === scheduleId ? "open" : ""}" data-schedule-id="${escapeHtml(scheduleId)}"><button class="schedule-swipe-delete" type="button" data-action="cancel-schedule" data-schedule-id="${escapeHtml(scheduleId)}">删除</button><button class="follow-up-event-row schedule-row-card schedule-swipe-content" type="button" data-action="open-schedule-preview" data-schedule-id="${escapeHtml(scheduleId)}"><time datetime="${item.date}T${item.time}">${escapeHtml(timeLabel)}</time><span class="follow-up-event-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(scheduleMeta(item))}</small>${showDate && item.endTime ? `<small class="schedule-list-time">${escapeHtml(item.time)}-${escapeHtml(item.endTime)}</small>` : ""}<b class="schedule-state ${status.key}">${escapeHtml(status.label)}</b></span><span class="item-action">›</span></button></div>`;
 }
 
 function followUpCommunicationRow(item, showDate = false) {
@@ -866,7 +984,10 @@ function followUpListView(schedules, recordRows) {
   const activeFilters = `${state.followUpListBusinessLine ? `<button type="button" data-action="remove-follow-up-list-filter" data-filter="businessLine">${escapeHtml(state.followUpListBusinessLine)} <span>×</span></button>` : ""}${state.followUpListTime !== "全部时间" ? `<button type="button" data-action="remove-follow-up-list-filter" data-filter="time">${escapeHtml(state.followUpListTime)} <span>×</span></button>` : ""}`;
   const scheduleSection = state.recordsShowSchedules ? `<section class="follow-up-list-group"><div class="follow-up-list-heading"><strong>日程安排</strong><span>${escapeHtml(state.followUpListTime)} · ${filteredSchedules.length} 条</span></div><div class="follow-up-section-card">${filteredSchedules.map((item) => followUpScheduleRow(item, true)).join("") || `<div class="follow-up-empty compact"><span>当前条件下暂无日程安排</span></div>`}</div></section>` : "";
   const communicationSection = state.recordsShowCommunications ? `<section class="follow-up-list-group"><div class="follow-up-list-heading"><strong>沟通记录</strong><span>时间倒序 · ${filteredRecords.length} 条</span></div><div class="follow-up-section-card">${filteredRecords.map((item) => followUpCommunicationRow(item, true)).join("") || `<div class="follow-up-empty compact"><span>当前条件下暂无沟通记录</span></div>`}</div></section>` : "";
-  return `<div class="follow-up-search-row"><input id="followUpListSearch" class="search-box" type="search" value="${escapeHtml(state.followUpListSearch)}" placeholder="搜索客户、主题或沟通要点" aria-label="搜索跟进记录"><button class="follow-up-filter-trigger ${activeFilterCount ? "active" : ""}" type="button" data-action="open-follow-up-list-filters">筛选${activeFilterCount ? `<b>${activeFilterCount}</b>` : ""}</button></div><div class="follow-up-list-result"><span>共 ${resultCount} 条</span>${state.followUpListSearch ? `<button class="text-button" type="button" data-action="clear-follow-up-search">清除搜索</button>` : ""}</div>${activeFilters ? `<div class="follow-up-active-filters" aria-label="已选筛选条件">${activeFilters}</div>` : ""}<div class="follow-up-list-view">${scheduleSection}${communicationSection}</div>`;
+  const resultMeta = state.followUpListSearch || activeFilterCount
+    ? `<div class="follow-up-list-result"><span>找到 ${resultCount} 条</span>${state.followUpListSearch ? `<button class="text-button" type="button" data-action="clear-follow-up-search">清除搜索</button>` : ""}</div>`
+    : "";
+  return `<div class="follow-up-search-row"><input id="followUpListSearch" class="search-box" type="search" value="${escapeHtml(state.followUpListSearch)}" placeholder="搜索客户、主题或沟通要点" aria-label="搜索跟进记录"><button class="follow-up-filter-trigger ${activeFilterCount ? "active" : ""}" type="button" data-action="open-follow-up-list-filters">筛选${activeFilterCount ? `<b>${activeFilterCount}</b>` : ""}</button></div>${resultMeta}${activeFilters ? `<div class="follow-up-active-filters" aria-label="已选筛选条件">${activeFilters}</div>` : ""}<div class="follow-up-list-view">${scheduleSection}${communicationSection}</div>`;
 }
 
 function getFilteredFollowUpList(schedules, recordRows) {
@@ -899,7 +1020,8 @@ function followUpListFilterLayer(schedules, recordRows) {
 
 function recordsCreateLayer() {
   if (state.scheduleComposerOpen) {
-    return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="scheduleComposerTitle"><button class="records-sheet-scrim" type="button" data-action="close-schedule-create" aria-label="关闭新增日程"></button><section class="records-sheet schedule-composer"><header><strong id="scheduleComposerTitle">新增日程</strong><button type="button" data-action="close-schedule-create" aria-label="关闭">×</button></header>${state.scheduleDraftError ? `<div class="field-error sheet-error">${escapeHtml(state.scheduleDraftError)}</div>` : ""}<label class="field"><span>日程主题 *</span><input id="scheduleDraftTitle" value="${escapeHtml(state.scheduleDraftTitle)}" placeholder="例如：客户拜访"></label><label class="field"><span>日期 *</span><input id="scheduleDraftDate" type="date" value="${escapeHtml(state.scheduleDraftDate)}"></label><div class="field-grid"><label class="field"><span>开始时间 *</span><input id="scheduleDraftTime" type="time" value="${escapeHtml(state.scheduleDraftTime)}"></label><label class="field"><span>结束时间（选填）</span><input id="scheduleDraftEndTime" type="time" value="${escapeHtml(state.scheduleDraftEndTime)}"></label></div><label class="field"><span>关联客户</span><input id="scheduleDraftCustomer" value="${escapeHtml(state.scheduleDraftCustomer)}" placeholder="请输入客户名称"></label><fieldset class="schedule-business-line-field"><legend>业务线 *</legend><div>${BUSINESS_LINES.map((line) => `<label class="schedule-line-option"><input name="scheduleBusinessLine" type="checkbox" value="${line}" ${state.scheduleDraftBusinessLines.includes(line) ? "checked" : ""}><span>${line}</span></label>`).join("")}</div><small>可多选</small></fieldset><div class="choice-field"><span>沟通渠道 *</span><input id="scheduleDraftChannel" type="hidden" value="${escapeHtml(state.scheduleDraftChannel)}"><div class="choice-row compact">${["微信", "手机", "线下拜访"].map((channel) => `<button class="choice-button ${state.scheduleDraftChannel === channel ? "active" : ""}" type="button" data-action="set-schedule-channel" data-value="${channel}">${channel}</button>`).join("")}</div></div><label class="field"><span>备注</span><textarea id="scheduleDraftDetail" class="compact-textarea" placeholder="补充本次日程说明">${escapeHtml(state.scheduleDraftDetail)}</textarea></label><div class="button-row equal"><button class="secondary-button" type="button" data-action="close-schedule-create">取消</button><button class="primary-button" type="button" data-action="save-schedule">保存日程</button></div></section></div>`;
+    const editing = Boolean(state.scheduleEditingId);
+    return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="scheduleComposerTitle"><button class="records-sheet-scrim" type="button" data-action="close-schedule-create" aria-label="关闭${editing ? "编辑" : "新增"}日程"></button><section class="records-sheet schedule-composer"><header><strong id="scheduleComposerTitle">${editing ? "编辑日程" : "新增日程"}</strong><button type="button" data-action="close-schedule-create" aria-label="关闭">×</button></header>${state.scheduleDraftError ? `<div class="field-error sheet-error">${escapeHtml(state.scheduleDraftError)}</div>` : ""}<label class="field"><span>日程主题 *</span><input id="scheduleDraftTitle" value="${escapeHtml(state.scheduleDraftTitle)}" placeholder="例如：客户拜访"></label><label class="field"><span>日期 *</span><input id="scheduleDraftDate" type="date" value="${escapeHtml(state.scheduleDraftDate)}"></label><div class="field-grid"><label class="field"><span>开始时间 *</span><input id="scheduleDraftTime" type="time" value="${escapeHtml(state.scheduleDraftTime)}"></label><label class="field"><span>结束时间（选填）</span><input id="scheduleDraftEndTime" type="time" value="${escapeHtml(state.scheduleDraftEndTime)}"></label></div><label class="field"><span>关联客户</span><input id="scheduleDraftCustomer" value="${escapeHtml(state.scheduleDraftCustomer)}" placeholder="请输入客户名称"></label><fieldset class="schedule-business-line-field"><legend>业务线 *</legend><div>${BUSINESS_LINES.map((line) => `<label class="schedule-line-option"><input name="scheduleBusinessLine" type="checkbox" value="${line}" ${state.scheduleDraftBusinessLines.includes(line) ? "checked" : ""}><span>${line}</span></label>`).join("")}</div><small>可多选</small></fieldset><div class="choice-field"><span>沟通渠道 *</span><input id="scheduleDraftChannel" type="hidden" value="${escapeHtml(state.scheduleDraftChannel)}"><div class="choice-row compact">${["微信", "手机", "线下拜访"].map((channel) => `<button class="choice-button ${state.scheduleDraftChannel === channel ? "active" : ""}" type="button" data-action="set-schedule-channel" data-value="${channel}">${channel}</button>`).join("")}</div></div><label class="field"><span>备注</span><textarea id="scheduleDraftDetail" class="compact-textarea" placeholder="补充本次日程说明">${escapeHtml(state.scheduleDraftDetail)}</textarea></label><div class="button-row equal"><button class="secondary-button" type="button" data-action="close-schedule-create">取消</button><button class="primary-button" type="button" data-action="save-schedule">${editing ? "保存修改" : "保存日程"}</button></div></section></div>`;
   }
   if (!state.recordsCreateMenuOpen) return "";
   return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="recordCreateTitle"><button class="records-sheet-scrim" type="button" data-action="close-record-create-menu" aria-label="关闭新增菜单"></button><section class="records-sheet record-create-menu"><header><strong id="recordCreateTitle">新增</strong><button type="button" data-action="close-record-create-menu" aria-label="关闭">×</button></header><button type="button" data-action="open-schedule-create"><span class="record-create-icon schedule">日</span><span><strong>新增日程</strong><small>安排未来的客户活动</small></span><i>›</i></button><button type="button" data-action="open-communication-create"><span class="record-create-icon communication">记</span><span><strong>新增沟通记录</strong><small>记录已经发生的沟通事实</small></span><i>›</i></button></section></div>`;
@@ -909,8 +1031,11 @@ function scheduleDetailLayer(schedules) {
   if (!state.selectedScheduleId) return "";
   const schedule = schedules.find((item) => (item.id || `${item.date}-${item.time}-${item.title}`) === state.selectedScheduleId);
   if (!schedule) return "";
-  const ended = `${schedule.date} ${schedule.endTime || schedule.time}` <= `${PROTOTYPE_TODAY} 23:59`;
-  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="scheduleDetailTitle"><button class="records-sheet-scrim" type="button" data-action="close-schedule-preview" aria-label="关闭日程详情"></button><section class="records-sheet schedule-detail-sheet"><header><strong id="scheduleDetailTitle">日程详情</strong><button type="button" data-action="close-schedule-preview" aria-label="关闭">×</button></header><div class="schedule-detail-title"><span class="record-create-icon schedule">日</span><span><strong>${escapeHtml(schedule.title)}</strong><small>${escapeHtml(schedule.customer || "未关联客户")}</small></span></div><dl class="fact-list"><div class="fact-row"><dt>时间</dt><dd>${escapeHtml(formatFollowUpDate(schedule.date))} ${escapeHtml(scheduleTimeLabel(schedule))}</dd></div><div class="fact-row"><dt>业务线</dt><dd>${escapeHtml((schedule.businessLines || []).join(" / "))}</dd></div><div class="fact-row"><dt>渠道</dt><dd>${escapeHtml(schedule.channel)}</dd></div></dl>${schedule.note ? `<p class="schedule-detail-note">${escapeHtml(schedule.note)}</p>` : ""}${ended ? `<button class="primary-button full-button" type="button" data-action="record-schedule-communication" data-schedule-id="${escapeHtml(state.selectedScheduleId)}">记录本次沟通</button><button class="text-button full-button" type="button" data-action="mark-schedule-not-happened">确认未发生</button>` : `<button class="secondary-button full-button" type="button" data-action="close-schedule-preview">关闭</button>`}</section></div>`;
+  const status = scheduleStatus(schedule);
+  const primaryAction = status.key === "recorded"
+    ? `<button class="primary-button full-button" type="button" data-action="open-linked-schedule-record" data-schedule-id="${escapeHtml(state.selectedScheduleId)}">查看沟通记录</button>`
+    : `<button class="primary-button full-button" type="button" data-action="record-schedule-communication" data-schedule-id="${escapeHtml(state.selectedScheduleId)}">记录本次沟通</button>`;
+  return `<div class="records-sheet-overlay" role="dialog" aria-modal="true" aria-labelledby="scheduleDetailTitle"><button class="records-sheet-scrim" type="button" data-action="close-schedule-preview" aria-label="关闭日程详情"></button><section class="records-sheet schedule-detail-sheet"><header><strong id="scheduleDetailTitle">日程详情</strong><button type="button" data-action="close-schedule-preview" aria-label="关闭">×</button></header><div class="schedule-detail-title ${status.key}"><span class="record-create-icon schedule">日</span><span><strong>${escapeHtml(schedule.title)}</strong><small>${escapeHtml(schedule.customer || "未关联客户")}</small><b class="schedule-state ${status.key}">${escapeHtml(status.label)}</b></span></div><dl class="fact-list"><div class="fact-row"><dt>时间</dt><dd>${escapeHtml(formatFollowUpDate(schedule.date))} ${escapeHtml(scheduleTimeLabel(schedule))}</dd></div><div class="fact-row"><dt>业务线</dt><dd>${escapeHtml((schedule.businessLines || []).join(" / "))}</dd></div><div class="fact-row"><dt>渠道</dt><dd>${escapeHtml(schedule.channel)}</dd></div></dl>${schedule.note ? `<p class="schedule-detail-note">${escapeHtml(schedule.note)}</p>` : ""}<div class="schedule-detail-actions">${primaryAction}<button class="secondary-button full-button" type="button" data-action="edit-schedule" data-schedule-id="${escapeHtml(state.selectedScheduleId)}">编辑日程</button></div></section></div>`;
 }
 
 function allRecordsScreen(recordRows) {
@@ -1063,22 +1188,22 @@ function governanceScreen() {
   const archiveReason = customerMode ? "企业主体合并，停止新业务使用" : currentArchivedRecord?.reason || "内容重复，保留历史引用";
   const archiveTime = currentArchivedRecord?.archivedAt || "2026-08-18 11:40";
   const selfScope = state.governanceScope === "self";
+  const customerModuleScope = customerMode && state.governanceScope === "customer-module";
   const restoredAction = customerMode
     ? `<button class="primary-button full-button" type="button" data-action="edit-restored-item" data-item="${itemId}">编辑客户资料</button>`
     : `<button class="primary-button full-button" type="button" data-action="edit-restored-item" data-item="${itemId}">补充或修订记录</button>`;
   return mobileFrame({
-    title: selfScope ? "我的归档" : "归档数据管理", subtitle: selfScope ? "本人归档 · 恢复后可编辑" : "授权数据治理", back: selfScope ? "profile" : customerMode ? "customers" : "records",
-    body: `<div class="mobile-segmented"><button class="segment-button ${customerMode ? "active" : ""}" type="button" data-action="set-governance-type" data-type="customer">已归档客户</button><button class="segment-button ${!customerMode ? "active" : ""}" type="button" data-action="set-governance-type" data-type="record">已归档沟通</button></div>
+    title: customerModuleScope ? "已归档客户" : selfScope ? "我的归档" : "归档数据管理", subtitle: customerModuleScope ? "恢复后可继续编辑" : selfScope ? "本人归档 · 恢复后可编辑" : "授权数据治理", back: customerModuleScope ? "customers" : selfScope ? "profile" : customerMode ? "customers" : "records",
+    body: `${customerModuleScope ? "" : `<div class="mobile-segmented"><button class="segment-button ${customerMode ? "active" : ""}" type="button" data-action="set-governance-type" data-type="customer">已归档客户</button><button class="segment-button ${!customerMode ? "active" : ""}" type="button" data-action="set-governance-type" data-type="record">已归档沟通</button></div>`}
       ${restored ? `<div class="notice success">对象已恢复到正常状态，操作已写入审计。</div>${restoredAction}` : `<div class="glass-panel"><div class="identity-strip"><span class="avatar">${customerMode ? "北" : "华"}</span><span><strong>${escapeHtml(itemName)}</strong><span>${escapeHtml(itemContext)}</span></span><span class="status-chip inactive">已归档</span></div><dl class="fact-list" style="margin-top:10px"><div class="fact-row"><dt>归档原因</dt><dd>${escapeHtml(archiveReason)}</dd></div><div class="fact-row"><dt>操作人</dt><dd>${selfScope || currentArchivedRecord ? "张雨" : "陈管理员"}</dd></div><div class="fact-row"><dt>归档时间</dt><dd>${escapeHtml(archiveTime)}</dd></div><div class="fact-row"><dt>历史引用</dt><dd>${customerMode ? "3 位联系人 · 8 条沟通" : "2 个附件 · 版本 1"}</dd></div></dl></div><details class="form-section" open><summary>查看归档详情 <span>只读</span></summary><div class="form-body">${customerMode ? `<div class="fact-row"><dt>业务线</dt><dd>商旅</dd></div><div class="fact-row"><dt>合作关系</dt><dd>潜在</dd></div><div class="fact-row"><dt>主联系人</dt><dd>孙宁 · 138****8172</dd></div><div class="fact-row"><dt>主地址</dt><dd>北京市朝阳区</dd></div>` : `<div class="fact-row"><dt>客户</dt><dd>${escapeHtml(currentArchivedRecord?.customer || "华东智造科技")}</dd></div><div class="fact-row"><dt>实际时间</dt><dd>${escapeHtml(currentArchivedRecord?.time || "2026-08-05 15:10")}</dd></div><div class="fact-row"><dt>渠道 / 业务线</dt><dd>${escapeHtml(currentArchivedRecord?.channel || "电话")} · ${escapeHtml(currentArchivedRecord?.businessLine || "商旅")}</dd></div><p class="record-body">${escapeHtml(currentArchivedRecord?.content || "双方核对了旧版报价的服务范围与计费口径。")}</p>`}</div></details><div class="notice">归档状态可查看但不可直接覆盖。系统会先恢复并记录审计，再进入编辑或版本补充。</div><button class="primary-button full-button" type="button" data-action="restore-and-edit" data-item="${itemId}">${customerMode ? "恢复并编辑客户" : "恢复并补充记录"}</button>`}
       <details class="form-section" style="margin-top:10px"><summary>归档规则</summary><div class="form-body"><ul class="governance-rules"><li>默认列表隐藏已归档对象</li><li>只能查看本人归档或仍有维护权限的数据</li><li>恢复不自动恢复单独归档的关联对象</li></ul></div></details>`
   });
 }
 
 function profileScreen() {
-  const draftItem = state.aiDraftStatus === "confirmed" ? "" : `<button class="system-item" type="button" data-action="open-ready-draft"><span class="item-dot warning"></span><span class="system-copy"><strong>沟通草稿</strong><span>待继续编辑或确认</span></span><span class="item-action">查看 ›</span></button>`;
   return mobileFrame({
-    title: "我的", subtitle: "身份、草稿与会话", nav: "profile",
-    body: `<div class="glass-panel"><div class="identity-strip"><span class="avatar">张</span><span><strong>张雨</strong><span>海天科技 · 华东销售部</span></span><span class="status-chip formal">销售人员</span></div></div><div class="glass-panel"><dl class="fact-list"><div class="fact-row"><dt>所属企业</dt><dd>海天科技</dd></div><div class="fact-row"><dt>组织范围</dt><dd>华东销售部</dd></div><div class="fact-row"><dt>数据权限</dt><dd>本人创建或内部负责客户</dd></div></dl></div><div class="list-panel">${draftItem}<button class="system-item" type="button" data-action="open-my-archive"><span class="item-dot"></span><span class="system-copy"><strong>我的归档</strong><span>查看本人归档的客户和沟通</span></span><span class="item-action">查看 ›</span></button></div><button class="danger-button full-button" type="button" data-action="logout">退出登录</button>`
+    title: "我的", subtitle: "身份与数据权限", nav: "profile",
+    body: `<div class="glass-panel"><div class="identity-strip"><span class="avatar">张</span><span><strong>张雨</strong><span>海天科技 · 华东销售部</span></span><span class="status-chip formal">销售人员</span></div></div><div class="glass-panel"><dl class="fact-list"><div class="fact-row"><dt>所属企业</dt><dd>海天科技</dd></div><div class="fact-row"><dt>组织范围</dt><dd>华东销售部</dd></div><div class="fact-row"><dt>数据权限</dt><dd>本人创建或内部负责客户</dd></div></dl></div><button class="danger-button full-button" type="button" data-action="logout">退出登录</button>`
   });
 }
 
@@ -1094,7 +1219,7 @@ function renderPhone() {
     "record-detail": recordDetailScreen,
     "ai-material": aiMaterialScreen,
     "ai-processing": aiProcessingScreen,
-    "ai-review": aiReviewScreen,
+    "ai-review": aiManualReviewScreen,
     "version-diff": versionDiffScreen,
     governance: governanceScreen,
     profile: profileScreen
@@ -1129,6 +1254,11 @@ function navigate(screenId, options = {}) {
   const recordFlowScreens = ["manual-record", "ai-material", "ai-processing", "ai-review"];
   if (screenId === "manual-record" && previousScreen !== "customer-detail") {
     state.manualRecordBack = "records";
+  }
+  if (screenId === "manual-record") {
+    state.communicationEntryMode = "manual";
+    state.aiManualHydrated = false;
+    if (!options.preserveScheduleLink) state.recordingScheduleId = "";
   }
   if (customerFlowScreens.includes(screenId) && (options.reset || !customerFlowScreens.includes(previousScreen))) {
     state.customerFlowReturnTarget = options.reset ? "customers" : previousScreen;
@@ -1206,6 +1336,7 @@ function showToast(message) {
 }
 
 function saveCurrentNote(explicit = true) {
+  if (!els.reviewNotes) return true;
   const id = state.activeScreen;
   const value = els.reviewNotes.value;
   notes[id] = value;
@@ -1372,9 +1503,8 @@ function saveRecordEdit(ownershipConfirmed = false) {
 
 function captureActiveScreenState() {
   if (state.activeScreen === "customer-form") captureCustomerForm();
-  if (state.activeScreen === "manual-record") captureManualForm();
+  if (["manual-record", "ai-review"].includes(state.activeScreen)) captureManualForm();
   if (state.activeScreen === "ai-material") captureMaterial();
-  if (state.activeScreen === "ai-review") captureAiDraft();
   if (state.activeScreen === "version-diff") captureRecordEditForm();
   if (state.activeScreen === "dedupe") state.dedupeOverrideDetail = document.querySelector("#overrideReason")?.value.trim() ?? state.dedupeOverrideDetail;
   if (state.activeScreen === "governance") state.governanceReason = document.querySelector("#governanceReason")?.value.trim() ?? state.governanceReason;
@@ -1452,10 +1582,28 @@ function handleAction(target, action) {
   if (action === "discard-form-exit" || action === "save-form-draft-exit") {
     const saved = action === "save-form-draft-exit";
     const fallback = state.draftExitFallback || "workbench";
+    const draftModule = state.draftExitPrompt === "customer" ? "客户" : "跟进记录";
     state.draftExitPrompt = "";
     state.draftExitFallback = "";
     navigateBack(fallback);
-    if (saved) showToast("草稿已保存，可在“我的”中继续编辑");
+    if (saved) showToast(`草稿已保存，可在${draftModule}中继续编辑`);
+    return;
+  }
+  if (action === "open-module-drafts") {
+    state.moduleDraftListOpen = target.dataset.draftKind;
+    renderPhone();
+    return;
+  }
+  if (action === "close-module-drafts") {
+    state.moduleDraftListOpen = "";
+    renderPhone();
+    return;
+  }
+  if (action === "set-customer-list-tab") {
+    state.customerListTab = target.dataset.tab;
+    state.customerFiltersOpen = false;
+    state.customerSortMenuOpen = false;
+    renderPhone();
     return;
   }
   if (action === "set-workbench-pending-tab") {
@@ -1483,13 +1631,32 @@ function handleAction(target, action) {
     showToast("已打开管理者指派事项");
     return;
   }
-  if (action === "open-workbench-calendar") {
+  if (action === "toggle-workbench-schedules") {
+    state.workbenchSchedulesExpanded = !state.workbenchSchedulesExpanded;
+    renderPhone();
+    return;
+  }
+  if (action === "open-workbench-schedule") {
+    state.selectedScheduleId = target.dataset.scheduleId;
+    state.workbenchNotificationOpen = false;
+    renderPhone();
+    return;
+  }
+  if (action === "open-customer-schedule") {
+    const schedule = getSchedules().find((item) => (item.id || `${item.date}-${item.time}-${item.title}`) === target.dataset.scheduleId);
     state.recordsCalendarMode = "day";
     state.recordsShowSchedules = true;
     state.recordsShowCommunications = true;
-    state.followUpSelectedDate = PROTOTYPE_TODAY;
+    state.followUpSelectedDate = schedule?.date || PROTOTYPE_TODAY;
+    state.selectedScheduleId = target.dataset.scheduleId;
     state.workbenchNotificationOpen = false;
     navigate("records");
+    return;
+  }
+  if (action === "open-workbench-record-create") {
+    state.manualRecordBack = "workbench";
+    state.manualErrors = {};
+    navigate("manual-record");
     return;
   }
   if (action === "open-workbench-pending") {
@@ -1513,8 +1680,8 @@ function handleAction(target, action) {
     navigate("records");
     return;
   }
-  if (action === "set-record-calendar-mode") {
-    state.recordsCalendarMode = target.dataset.mode;
+  if (action === "show-all-follow-ups" || action === "show-dated-follow-ups") {
+    state.recordsCalendarMode = action === "show-all-follow-ups" ? "list" : "day";
     state.recordsCreateMenuOpen = false;
     state.followUpListFiltersOpen = false;
     renderPhone();
@@ -1580,7 +1747,15 @@ function handleAction(target, action) {
   if (action === "open-schedule-create") {
     state.recordsCreateMenuOpen = false;
     state.scheduleComposerOpen = true;
+    state.scheduleEditingId = "";
+    state.scheduleDraftTitle = "";
     state.scheduleDraftDate = state.followUpSelectedDate;
+    state.scheduleDraftTime = "09:30";
+    state.scheduleDraftEndTime = "";
+    state.scheduleDraftCustomer = "";
+    state.scheduleDraftBusinessLines = [];
+    state.scheduleDraftChannel = "微信";
+    state.scheduleDraftDetail = "";
     state.scheduleDraftError = "";
     renderPhone();
     return;
@@ -1599,6 +1774,7 @@ function handleAction(target, action) {
   }
   if (action === "close-schedule-create") {
     state.scheduleComposerOpen = false;
+    state.scheduleEditingId = "";
     state.scheduleDraftError = "";
     renderPhone();
     return;
@@ -1622,9 +1798,18 @@ function handleAction(target, action) {
       renderPhone();
       return;
     }
-    state.createdWorkbenchSchedules.push({ id: `schedule-created-${Date.now()}`, date: state.scheduleDraftDate, time: state.scheduleDraftTime, endTime: state.scheduleDraftEndTime, title: state.scheduleDraftTitle, customer: state.scheduleDraftCustomer || "未关联客户", businessLines: [...state.scheduleDraftBusinessLines], channel: state.scheduleDraftChannel, note: state.scheduleDraftDetail });
+    const savedSchedule = { id: state.scheduleEditingId || `schedule-created-${Date.now()}`, date: state.scheduleDraftDate, time: state.scheduleDraftTime, endTime: state.scheduleDraftEndTime, title: state.scheduleDraftTitle, customer: state.scheduleDraftCustomer || "未关联客户", businessLines: [...state.scheduleDraftBusinessLines], channel: state.scheduleDraftChannel, note: state.scheduleDraftDetail };
+    const editing = Boolean(state.scheduleEditingId);
+    if (editing) {
+      const createdIndex = state.createdWorkbenchSchedules.findIndex((item) => item.id === state.scheduleEditingId);
+      if (createdIndex >= 0) state.createdWorkbenchSchedules.splice(createdIndex, 1, savedSchedule);
+      else state.scheduleOverrides[state.scheduleEditingId] = savedSchedule;
+    } else {
+      state.createdWorkbenchSchedules.push(savedSchedule);
+    }
     state.followUpSelectedDate = state.scheduleDraftDate;
     state.scheduleComposerOpen = false;
+    state.scheduleEditingId = "";
     state.scheduleDraftTitle = "";
     state.scheduleDraftEndTime = "";
     state.scheduleDraftCustomer = "";
@@ -1632,31 +1817,23 @@ function handleAction(target, action) {
     state.scheduleDraftChannel = "微信";
     state.scheduleDraftDetail = "";
     state.scheduleDraftError = "";
-    showToast("日程已创建");
+    showToast(editing ? "日程已更新" : "日程已创建");
     return;
   }
   if (action === "open-communication-create") {
     state.recordsCreateMenuOpen = false;
-    state.manualRecordBack = "records";
+    state.manualRecordBack = state.activeScreen === "workbench" ? "workbench" : "records";
     navigate("manual-record");
     return;
   }
   if (action === "set-follow-up-date") {
     state.followUpSelectedDate = target.dataset.date;
+    state.recordsCalendarMode = "day";
     renderPhone();
-    return;
-  }
-  if (action === "go-follow-up-today") {
-    state.followUpSelectedDate = PROTOTYPE_TODAY;
-    if (state.recordsCalendarMode === "list") state.recordsCalendarMode = "day";
-    renderPhone();
-    return;
-  }
-  if (action === "shift-follow-up-days") {
-    showToast(target.dataset.direction === "previous" ? "原型仅展示最近一行日期" : "已是最近日期");
     return;
   }
   if (action === "open-schedule-preview") {
+    state.openScheduleSwipeId = "";
     state.selectedScheduleId = target.dataset.scheduleId;
     renderPhone();
     return;
@@ -1664,6 +1841,31 @@ function handleAction(target, action) {
   if (action === "close-schedule-preview") {
     state.selectedScheduleId = "";
     renderPhone();
+    return;
+  }
+  if (action === "edit-schedule") {
+    const schedule = getSchedules().find((item) => (item.id || `${item.date}-${item.time}-${item.title}`) === target.dataset.scheduleId);
+    if (!schedule) return;
+    state.scheduleEditingId = target.dataset.scheduleId;
+    state.scheduleDraftTitle = schedule.title;
+    state.scheduleDraftDate = schedule.date;
+    state.scheduleDraftTime = schedule.time;
+    state.scheduleDraftEndTime = schedule.endTime || "";
+    state.scheduleDraftCustomer = schedule.customer === "未关联客户" ? "" : (schedule.customer || "");
+    state.scheduleDraftBusinessLines = [...(schedule.businessLines || [])];
+    state.scheduleDraftChannel = schedule.channel || "微信";
+    state.scheduleDraftDetail = schedule.note || "";
+    state.scheduleDraftError = "";
+    state.selectedScheduleId = "";
+    state.scheduleComposerOpen = true;
+    renderPhone();
+    return;
+  }
+  if (action === "cancel-schedule") {
+    if (!state.canceledScheduleIds.includes(target.dataset.scheduleId)) state.canceledScheduleIds.push(target.dataset.scheduleId);
+    state.openScheduleSwipeId = "";
+    if (state.selectedScheduleId === target.dataset.scheduleId) state.selectedScheduleId = "";
+    showToast("日程已删除");
     return;
   }
   if (action === "record-schedule-communication") {
@@ -1678,13 +1880,16 @@ function handleAction(target, action) {
     state.manualEndTime = schedule.endTime ? `${schedule.date} ${schedule.endTime}` : "";
     state.manualChannel = schedule.channel;
     state.manualRecordBack = "records";
+    state.recordingScheduleId = target.dataset.scheduleId;
     state.selectedScheduleId = "";
-    navigate("manual-record");
+    navigate("manual-record", { preserveScheduleLink: true });
     return;
   }
-  if (action === "mark-schedule-not-happened") {
-    state.selectedScheduleId = "";
-    showToast("已确认日程未发生");
+  if (action === "open-linked-schedule-record") {
+    const schedule = getSchedules().find((item) => (item.id || `${item.date}-${item.time}-${item.title}`) === target.dataset.scheduleId);
+    const record = schedule?.linkedRecordSubject ? getFormalRecords().find((item) => item.subject === schedule.linkedRecordSubject) : null;
+    if (!record) return;
+    handleAction({ dataset: { customer: record.customer, time: record.displayTime, channel: record.channel, businessLine: recordBusinessLines(record)[0] || "", businessLines: recordBusinessLines(record).join("|"), subject: record.subject } }, "select-record");
     return;
   }
   if (action === "toggle-workbench-notifications") {
@@ -1769,16 +1974,43 @@ function handleAction(target, action) {
     state.processState = "ready";
     state.aiDraftStatus = "ready";
     state.aiError = "";
+    state.aiManualHydrated = false;
     navigate("ai-review");
     return;
   }
-  if (action === "continue-manual-draft") {
-    state.customerName = "远见数字供应链";
-    state.manualBusinessLine = "会奖服务";
-    state.manualBusinessLines = ["会奖服务"];
-    state.manualTopics["会奖服务"] = { subject: "会议纪要补录", keyPoints: "", result: "" };
-    state.manualChannel = "手机";
-    state.manualSubject = "会议纪要补录";
+  if (action === "open-customer-draft") {
+    state.moduleDraftListOpen = "";
+    Object.assign(state, {
+      customerFormMode: "create", customerName: "远航国际商旅", customerShortName: "远航商旅", customerParentName: "",
+      customerBusinessLine: "商旅", customerRelation: "潜在", customerContactName: "赵珊", customerContactDepartment: "行政部",
+      customerContactTitle: "行政经理", customerContactMobile: "138****5169", customerContactEmail: "", customerContactWechat: "",
+      customerOwnerAssignments: [{ role: "前端销售", person: "张雨" }], customerMoreDetailsOpen: false, customerFormError: ""
+    });
+    navigate("customer-form");
+    return;
+  }
+  if (action === "open-customer-archive") {
+    state.governanceMode = "list";
+    state.governanceType = "customer";
+    state.governanceScope = "customer-module";
+    navigate("governance");
+    return;
+  }
+  if (action === "continue-communication-draft") {
+    state.moduleDraftListOpen = "";
+    const annualMeeting = target.dataset.draftId === "annual-meeting";
+    const businessLine = annualMeeting ? "会奖服务" : "企业用车";
+    const subject = annualMeeting ? "年度会议需求沟通" : "企业用车方案补充";
+    state.customerName = annualMeeting ? "远见数字供应链" : "华东智造科技";
+    state.manualBusinessLine = businessLine;
+    state.manualBusinessLines = [businessLine];
+    state.manualTopics[businessLine] = { subject, keyPoints: annualMeeting ? "客户初步确认年度会议规模。" : "补充班车线路与车型范围。", result: "" };
+    state.manualChannel = annualMeeting ? "手机" : "微信";
+    state.manualSubject = subject;
+    state.manualTime = annualMeeting ? "2026-08-31 11:00" : "2026-08-30 17:20";
+    state.manualEndTime = "";
+    state.manualRecordBack = "records";
+    state.manualErrors = {};
     navigate("manual-record");
     return;
   }
@@ -1819,7 +2051,9 @@ function handleAction(target, action) {
     state.customerAddresses = [{ country: state.customerCountry || "中国", province: state.customerProvince || "", city: state.customerCity || "", detail: state.customerDetailAddress || "" }];
     state.customerPrimaryAddressIndex = 0;
     state.customerBusinessRelations = customerRelationsForName(state.customerName);
-    state.customerDetailBusinessLine = state.customerBusinessLineFilter && state.customerBusinessRelations.some((item) => item.line === state.customerBusinessLineFilter) ? state.customerBusinessLineFilter : "all";
+    state.customerDetailBusinessLine = "all";
+    state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+    state.customerRelationDetailLine = "";
     state.customerMinimalProfile = false;
     state.customerFormMode = "edit";
     state.customerTab = "overview";
@@ -1888,7 +2122,10 @@ function handleAction(target, action) {
   if (action === "open-record-customer") {
     state.customerName = state.recordSnapshot.customer;
     state.customerBusinessRelations = customerRelationsForName(state.customerName);
-    state.customerDetailBusinessLine = state.recordSnapshot.businessLine || "all";
+    state.customerDetailBusinessLine = "all";
+    state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+    state.customerRelationDetailLine = "";
+    state.customerTab = "timeline";
     navigate("customer-detail");
     return;
   }
@@ -1954,16 +2191,59 @@ function handleAction(target, action) {
     state.recordCustomerScope = "";
   }
   if (action === "set-customer-tab") state.customerTab = target.dataset.tab;
-  if (action === "set-detail-business-line") {
-    state.customerDetailBusinessLine = target.dataset.value;
-    state.customerTab = "overview";
+  if (action === "toggle-customer-relation-filter") {
+    const line = target.dataset.line;
+    const selected = new Set(state.customerSelectedBusinessLines || []);
+    if (target.checked) selected.add(line);
+    else selected.delete(line);
+    state.customerSelectedBusinessLines = [...selected];
   }
+  if (action === "open-customer-relation-detail") state.customerRelationDetailLine = target.dataset.line;
+  if (action === "close-customer-relation-detail") state.customerRelationDetailLine = "";
   if (action === "start-line-record") {
+    const selectedLines = (state.customerSelectedBusinessLines || []).filter((line) => state.customerBusinessRelations.some((item) => item.line === line));
+    if (!selectedLines.length) {
+      showToast("请先选择至少一条业务线");
+      return;
+    }
     state.manualRecordBack = "customer-detail";
-    state.manualBusinessLine = state.customerDetailBusinessLine === "all" ? "" : state.customerDetailBusinessLine;
-    state.manualBusinessLines = state.manualBusinessLine ? [state.manualBusinessLine] : [];
-    if (state.manualBusinessLine) state.manualTopics[state.manualBusinessLine] ||= { subject: "", keyPoints: "", result: "" };
+    state.manualBusinessLines = [...selectedLines];
+    state.manualBusinessLine = selectedLines[0];
+    selectedLines.forEach((line) => { state.manualTopics[line] ||= { subject: "", keyPoints: "", result: "" }; });
     navigate("manual-record");
+    return;
+  }
+  if (action === "start-customer-relation-record") {
+    const line = target.dataset.line;
+    state.customerRelationDetailLine = "";
+    state.manualRecordBack = "customer-detail";
+    state.manualBusinessLines = [line];
+    state.manualBusinessLine = line;
+    state.manualTopics[line] ||= { subject: "", keyPoints: "", result: "" };
+    navigate("manual-record");
+    return;
+  }
+  if (action === "open-customer-schedule-create" || action === "open-customer-line-schedule") {
+    const selectedLines = action === "open-customer-line-schedule" ? [target.dataset.line] : [...(state.customerSelectedBusinessLines || [])];
+    if (!selectedLines.length) {
+      showToast("请先选择至少一条业务线");
+      return;
+    }
+    state.customerRelationDetailLine = "";
+    state.recordsCalendarMode = "day";
+    state.scheduleEditingId = "";
+    state.scheduleDraftTitle = "";
+    state.scheduleDraftDate = PROTOTYPE_TODAY;
+    state.scheduleDraftTime = "09:30";
+    state.scheduleDraftEndTime = "";
+    state.scheduleDraftCustomer = state.customerName;
+    state.scheduleDraftBusinessLines = selectedLines;
+    state.scheduleDraftChannel = "微信";
+    state.scheduleDraftDetail = "";
+    state.scheduleDraftError = "";
+    state.selectedScheduleId = "";
+    state.scheduleComposerOpen = true;
+    navigate("records");
     return;
   }
   if (action === "add-customer-business-line") {
@@ -1973,8 +2253,21 @@ function handleAction(target, action) {
       return;
     }
     state.customerBusinessRelations.push({ line: missingLine, stage: "潜在", owners: [{ role: "前端销售", person: "张雨" }], contacts: [], lastTime: "暂无沟通", lastChannel: "", lastSubject: "暂无沟通记录", lastSummary: "" });
-    state.customerDetailBusinessLine = missingLine;
+    state.customerSelectedBusinessLines = [...new Set([...(state.customerSelectedBusinessLines || []), missingLine])];
     showToast(`${missingLine}业务线已建立`);
+    return;
+  }
+  if (action === "prefill-customer-from-material") {
+    Object.assign(state, {
+      customerName: state.customerName || "华东智造科技有限公司",
+      customerShortName: state.customerShortName || "华东智造",
+      customerIndustry: state.customerIndustry || "制造业",
+      customerContactName: state.customerContactName || "王磊",
+      customerContactDepartment: state.customerContactDepartment || "采购部",
+      customerContactTitle: state.customerContactTitle || "采购总监",
+      customerContactMobile: state.customerContactMobile || "138****2036"
+    });
+    showToast("已识别并回填，请确认标准字段");
     return;
   }
   if (action === "set-material-mode") {
@@ -1997,7 +2290,7 @@ function handleAction(target, action) {
       customerContactMobile: "", customerContactEmail: "", customerContactWechat: "", customerContactRemark: "", customerNature: "", customerEmployeeCount: "",
       customerRevenueRange: "", customerListed: "", customerSource: "", customerUscc: "", customerRegistrationNo: "", customerEstablishedDate: "",
       customerRegisteredCapital: "", customerCapitalCurrency: "CNY", customerWebsite: "", customerOfficialAccount: "", customerPublicEmail: "", customerMainPhone: "",
-      customerCountry: "中国", customerProvince: "", customerCity: "", customerDetailAddress: "", customerAddresses: [{ country: "中国", province: "", city: "", detail: "" }], customerPrimaryAddressIndex: 0, customerMoreDetailsOpen: false, customerRemark: "", customerOwnerName: "张雨", customerOwnerRole: "销售", customerFrontendSales: "张雨", customerBackendSales: "", customerOwnerAssignments: [{ role: "前端销售", person: "张雨" }], customerBusinessRelations: [], customerDetailBusinessLine: "all",
+      customerCountry: "中国", customerProvince: "", customerCity: "", customerDetailAddress: "", customerAddresses: [{ country: "中国", province: "", city: "", detail: "" }], customerPrimaryAddressIndex: 0, customerMoreDetailsOpen: false, customerRemark: "", customerOwnerName: "张雨", customerOwnerRole: "销售", customerFrontendSales: "张雨", customerBackendSales: "", customerOwnerAssignments: [{ role: "前端销售", person: "张雨" }], customerBusinessRelations: [], customerDetailBusinessLine: "all", customerSelectedBusinessLines: [], customerRelationDetailLine: "",
       customerFormError: "", customerDedupeStatus: "idle", dedupeStage: "idle", dedupeOverrideOpen: false, dedupeAccessRequested: false
     });
     navigate("customer-form");
@@ -2015,13 +2308,6 @@ function handleAction(target, action) {
     navigate("governance");
     return;
   }
-  if (action === "open-my-archive") {
-    state.governanceMode = "list";
-    state.governanceType = "customer";
-    state.governanceScope = "self";
-    navigate("governance");
-    return;
-  }
   if (action === "request-restricted-access") {
     state.dedupeAccessRequested = true;
     showToast(state.dedupeExistingBusinessLines.includes(state.customerBusinessLine) ? "业务线加入申请已提交" : "新增业务线申请已提交");
@@ -2036,6 +2322,8 @@ function handleAction(target, action) {
       state.customerBusinessRelations.push({ line: requestedLine, stage: "潜在", owners: [{ role: "前端销售", person: "张雨" }], contacts: [], lastTime: "暂无沟通", lastChannel: "", lastSubject: "暂无沟通记录", lastSummary: "" });
     }
     state.customerDetailBusinessLine = requestedLine;
+    state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+    state.customerRelationDetailLine = "";
     state.customerFormMode = "edit";
     completeWorkflow("customer", "customer-detail");
     showToast(action === "add-existing-customer-line" ? `已为现有客户新增${requestedLine}业务线` : `已打开${requestedLine}业务线`);
@@ -2066,7 +2354,9 @@ function handleAction(target, action) {
     state.customerPrimaryAddressIndex = 0;
     state.customerBusinessRelations = customerRelationsForName(state.customerName);
     if (!state.customerBusinessRelations.some((item) => item.line === requestedLine)) state.customerBusinessRelations.push({ line: requestedLine, stage: "潜在", owners: [{ role: "前端销售", person: "张雨" }], contacts: [], lastTime: "暂无沟通", lastChannel: "", lastSubject: "暂无沟通记录", lastSummary: "" });
-    state.customerDetailBusinessLine = requestedLine;
+    state.customerDetailBusinessLine = "all";
+    state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+    state.customerRelationDetailLine = "";
     state.customerMinimalProfile = false;
     completeWorkflow("customer", "customer-detail");
     return;
@@ -2147,6 +2437,19 @@ function handleAction(target, action) {
       state.dedupeOverrideApproved = true;
       state.customerFormError = "";
       state.customerMinimalProfile = true;
+      state.customerBusinessRelations = [{
+        line: state.customerBusinessLine,
+        stage: state.customerRelation,
+        owners: state.customerOwnerAssignments.map((item) => ({ ...item })),
+        contacts: state.customerContactName ? [state.customerContactName] : [],
+        lastTime: "暂无沟通",
+        lastChannel: "",
+        lastSubject: "暂无沟通记录",
+        lastSummary: ""
+      }];
+      state.customerDetailBusinessLine = "all";
+      state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+      state.customerRelationDetailLine = "";
       completeWorkflow("customer", "customer-detail");
       showToast("客户已保存，继续新增理由已写入审计");
       return;
@@ -2186,8 +2489,28 @@ function handleAction(target, action) {
     else {
       state.customerFormError = "";
       state.customerMinimalProfile = state.customerFormMode === "create";
-      state.customerBusinessRelations = [{ line: state.customerBusinessLine, stage: state.customerRelation, owners: state.customerOwnerAssignments.map((item) => ({ ...item })), contacts: state.customerContactName ? [state.customerContactName] : [], lastTime: "暂无沟通", lastChannel: "", lastSubject: "暂无沟通记录", lastSummary: "" }];
-      state.customerDetailBusinessLine = state.customerBusinessLine;
+      const savedRelation = {
+        line: state.customerBusinessLine,
+        stage: state.customerRelation,
+        owners: state.customerOwnerAssignments.map((item) => ({ ...item })),
+        contacts: state.customerContactName ? [state.customerContactName] : [],
+        lastTime: "暂无沟通",
+        lastChannel: "",
+        lastSubject: "暂无沟通记录",
+        lastSummary: ""
+      };
+      if (state.customerFormMode === "create" || !state.customerBusinessRelations.length) {
+        state.customerBusinessRelations = [savedRelation];
+      } else if (state.customerBusinessRelations.some((item) => item.line === savedRelation.line)) {
+        state.customerBusinessRelations = state.customerBusinessRelations.map((item) => item.line === savedRelation.line
+          ? { ...item, stage: savedRelation.stage, owners: savedRelation.owners, contacts: savedRelation.contacts }
+          : item);
+      } else {
+        state.customerBusinessRelations = [...state.customerBusinessRelations, savedRelation];
+      }
+      state.customerDetailBusinessLine = "all";
+      state.customerSelectedBusinessLines = state.customerBusinessRelations.map((item) => item.line);
+      state.customerRelationDetailLine = "";
       completeWorkflow("customer", "customer-detail");
       showToast("客户已保存，系统生成客户编码");
       return;
@@ -2206,10 +2529,27 @@ function handleAction(target, action) {
     showToast("已新增一行，请补齐必填字段后保存");
     return;
   }
-  if (action === "change-customer") state.customerPickerOpen = !state.customerPickerOpen;
+  if (action === "change-customer") {
+    captureManualForm();
+    state.customerPickerOpen = true;
+    state.recordCustomerSearch = "";
+    renderPhone();
+    requestAnimationFrame(() => document.querySelector("#recordCustomerSearch")?.focus());
+    return;
+  }
+  if (action === "close-record-customer-picker") {
+    state.customerPickerOpen = false;
+    state.recordCustomerSearch = "";
+    renderPhone();
+    requestAnimationFrame(() => document.querySelector('[data-action="change-customer"]')?.focus());
+    return;
+  }
   if (action === "choose-record-customer") {
     state.customerName = target.dataset.customer;
     state.customerPickerOpen = false;
+    state.recordCustomerSearch = "";
+    renderPhone();
+    return;
   }
   if (action === "assign-backend-sales") {
     state.customerBackendSales = "李程";
@@ -2255,8 +2595,17 @@ function handleAction(target, action) {
       state.supplementAttachmentAdded = false;
       state.recordSupplementAttachmentAdded = false;
       state.recordSupplementParticipantAdded = false;
+      if (state.recordingScheduleId) {
+        const linkedSchedule = getSchedules().find((item) => (item.id || `${item.date}-${item.time}-${item.title}`) === state.recordingScheduleId);
+        if (linkedSchedule) state.scheduleOverrides[state.recordingScheduleId] = { ...linkedSchedule, linkedRecordSubject: generatedSubject };
+        state.recordingScheduleId = "";
+      }
+      if (state.communicationEntryMode === "ai") {
+        state.aiDraftStatus = "confirmed";
+        state.aiManualHydrated = false;
+      }
       completeWorkflow("record", "record-detail");
-      showToast("正式记录已保存，重复提交将返回同一记录");
+      showToast(state.communicationEntryMode === "ai" ? "AI 预填已确认并保存为正式记录" : "正式记录已保存，重复提交将返回同一记录");
       return;
     }
   }
@@ -2275,6 +2624,7 @@ function handleAction(target, action) {
     state.materialError = "";
     state.processState = "processing";
     state.aiDraftStatus = "editing";
+    state.aiManualHydrated = false;
     navigate("ai-processing");
     return;
   }
@@ -2289,6 +2639,7 @@ function handleAction(target, action) {
     state.aiDraft.customer = target.dataset.customer || "华东智造科技有限公司";
     state.processState = "ready";
     state.aiDraftStatus = "ready";
+    state.aiManualHydrated = false;
     navigate("ai-review");
     showToast("客户已确认，生成未确认草稿");
     return;
@@ -2429,6 +2780,56 @@ function handleAction(target, action) {
   renderPhone();
 }
 
+let scheduleSwipeGesture = null;
+let ignoreScheduleClickUntil = 0;
+
+document.addEventListener("pointerdown", (event) => {
+  const content = event.target.closest(".schedule-swipe-content");
+  if (!content || event.button !== 0) return;
+  const row = content.closest(".schedule-swipe-row");
+  scheduleSwipeGesture = {
+    pointerId: event.pointerId,
+    row,
+    content,
+    startX: event.clientX,
+    startY: event.clientY,
+    initiallyOpen: row.classList.contains("open"),
+    swiping: false
+  };
+  content.setPointerCapture?.(event.pointerId);
+});
+
+document.addEventListener("pointermove", (event) => {
+  const gesture = scheduleSwipeGesture;
+  if (!gesture || gesture.pointerId !== event.pointerId) return;
+  const deltaX = event.clientX - gesture.startX;
+  const deltaY = event.clientY - gesture.startY;
+  if (!gesture.swiping && Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY)) gesture.swiping = true;
+  if (!gesture.swiping) return;
+  event.preventDefault();
+  const startOffset = gesture.initiallyOpen ? -68 : 0;
+  const offset = Math.max(-68, Math.min(0, startOffset + deltaX));
+  gesture.content.style.transition = "none";
+  gesture.content.style.transform = `translateX(${offset}px)`;
+});
+
+document.addEventListener("pointerup", (event) => {
+  const gesture = scheduleSwipeGesture;
+  if (!gesture || gesture.pointerId !== event.pointerId) return;
+  if (gesture.swiping) {
+    const deltaX = event.clientX - gesture.startX;
+    const startOffset = gesture.initiallyOpen ? -68 : 0;
+    state.openScheduleSwipeId = startOffset + deltaX < -34 ? gesture.row.dataset.scheduleId : "";
+    ignoreScheduleClickUntil = Date.now() + 350;
+    renderPhone();
+  }
+  scheduleSwipeGesture = null;
+});
+
+document.addEventListener("pointercancel", () => {
+  scheduleSwipeGesture = null;
+});
+
 document.addEventListener("click", (event) => {
   if (state.workbenchNotificationOpen && !event.target.closest(".workbench-identity")) {
     state.workbenchNotificationOpen = false;
@@ -2443,10 +2844,24 @@ document.addEventListener("click", (event) => {
     return;
   }
   const actionTarget = event.target.closest("[data-action]");
-  if (actionTarget) handleAction(actionTarget, actionTarget.dataset.action);
+  if (actionTarget) {
+    if (actionTarget.dataset.action === "open-schedule-preview" && Date.now() < ignoreScheduleClickUntil) return;
+    handleAction(actionTarget, actionTarget.dataset.action);
+  }
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.customerPickerOpen) {
+    state.customerPickerOpen = false;
+    state.recordCustomerSearch = "";
+    renderPhone();
+    return;
+  }
+  if (event.key === "Escape" && state.moduleDraftListOpen) {
+    state.moduleDraftListOpen = "";
+    renderPhone();
+    return;
+  }
   if (event.key === "Escape" && state.followUpListFiltersOpen) {
     state.followUpListFiltersOpen = false;
     renderPhone();
@@ -2517,11 +2932,6 @@ document.addEventListener("change", (event) => {
     renderPhone();
     return;
   }
-  if (event.target.id === "customerDetailBusinessLine") {
-    state.customerDetailBusinessLine = event.target.value;
-    state.customerTab = "overview";
-    renderPhone();
-  }
   if (event.target.id === "customerSort") {
     state.customerSort = event.target.value;
     renderPhone();
@@ -2554,6 +2964,19 @@ document.addEventListener("change", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.id === "recordCustomerSearch") {
+    state.recordCustomerSearch = event.target.value;
+    const query = event.target.value.trim().toLocaleLowerCase("zh-CN");
+    let visible = 0;
+    document.querySelectorAll("[data-record-customer-option]").forEach((row) => {
+      const matches = row.dataset.searchText.toLocaleLowerCase("zh-CN").includes(query);
+      row.hidden = !matches;
+      if (matches) visible += 1;
+    });
+    const empty = document.querySelector("[data-record-customer-empty]");
+    if (empty) empty.hidden = visible > 0;
+    return;
+  }
   if (event.target.id === "followUpListSearch") {
     state.followUpListSearch = event.target.value;
     renderPhone();
@@ -2594,28 +3017,28 @@ document.addEventListener("input", (event) => {
   }
 });
 
-els.reviewNotes.addEventListener("input", () => {
+els.reviewNotes?.addEventListener("input", () => {
   els.commentCount.textContent = `${els.reviewNotes.value.length} 字`;
   els.saveState.textContent = "正在编辑…";
   clearTimeout(noteTimer);
   noteTimer = setTimeout(() => saveCurrentNote(false), 500);
 });
 
-els.reviewDone.addEventListener("change", () => {
+els.reviewDone?.addEventListener("change", () => {
   reviewStatus[state.activeScreen] = els.reviewDone.checked;
   const ok = writeStorage(REVIEW_KEY, reviewStatus);
   if (!ok) els.saveState.textContent = "评审状态未能写入浏览器，本次会话仍保留";
   renderNav();
 });
 
-els.deviceSize.addEventListener("change", () => {
+els.deviceSize?.addEventListener("change", () => {
   els.phoneShell.dataset.size = els.deviceSize.value;
 });
 
-document.querySelector("#saveCurrent").addEventListener("click", () => saveCurrentNote(true));
-document.querySelector("#copyCurrent").addEventListener("click", copyCurrent);
-document.querySelector("#exportAll").addEventListener("click", exportNotes);
-document.querySelector("#resetPrototype").addEventListener("click", () => {
+document.querySelector("#saveCurrent")?.addEventListener("click", () => saveCurrentNote(true));
+document.querySelector("#copyCurrent")?.addEventListener("click", copyCurrent);
+document.querySelector("#exportAll")?.addEventListener("click", exportNotes);
+document.querySelector("#resetPrototype")?.addEventListener("click", () => {
   saveCurrentNote(false);
   state = initialState();
   els.deviceSize.value = "390x844";
@@ -2624,6 +3047,6 @@ document.querySelector("#resetPrototype").addEventListener("click", () => {
   showToast("原型状态已重置，评审意见未清除");
 });
 
-window.addEventListener("pagehide", () => saveCurrentNote(false));
+if (els.reviewNotes) window.addEventListener("pagehide", () => saveCurrentNote(false));
 
 render();
